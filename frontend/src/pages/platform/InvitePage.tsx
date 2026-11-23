@@ -39,7 +39,7 @@ export default function InvitePage() {
       <div className="inv-card">
         <div className="inv-mark" style={{ background: t.logoColor }}><Scissors /></div>
         <div>
-          <p className="t-small muted">{businessTypeLabel(t.businessType)} · Makas salon paneli</p>
+          <p className="t-small muted">{businessTypeLabel(t.businessType)} · RandevuHazır salon paneli</p>
           <h1>{t.name} paneline hoş geldiniz</h1>
           <p className="muted" style={{ marginTop: 6 }}>İşletme sahibi hesabınızı tamamlayın; ardından hizmetlerinizi ve personelinizi ekleyebilirsiniz.</p>
         </div>

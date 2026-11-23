@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\ComodoMakas.Domain\ComodoMakas.Domain.csproj" />
+    <ProjectReference Include="..\ComodoRandevuHazir.Domain\ComodoRandevuHazir.Domain.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

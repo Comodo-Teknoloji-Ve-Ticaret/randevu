@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\ComodoMakas.Application\ComodoMakas.Application.csproj" />
+    <ProjectReference Include="..\ComodoRandevuHazir.Application\ComodoRandevuHazir.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

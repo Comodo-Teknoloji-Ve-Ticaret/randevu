@@ -20,8 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ComodoMakas.WebApi\ComodoMakas.WebApi.csproj" />
-    <ProjectReference Include="..\..\src\ComodoMakas.Infrastructure\ComodoMakas.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\ComodoRandevuHazir.WebApi\ComodoRandevuHazir.WebApi.csproj" />
+    <ProjectReference Include="..\..\src\ComodoRandevuHazir.Infrastructure\ComodoRandevuHazir.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

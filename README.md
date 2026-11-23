@@ -1,4 +1,4 @@
-# Makas: Kuaför Randevu & Salon Yönetimi
+# RandevuHazır: Kuaför Randevu & Salon Yönetimi
 
 Comodo'nun kuaförlere sattığı çok kiracılı (çok salonlu) salon yönetim ürünü. Resepsiyondaki bilgisayardan kullanılmak üzere tasarlandı, telefonda da tam çalışır.
 

@@ -1,6 +1,6 @@
 import {
   BarChart3, Building2, CalendarDays, ChevronDown, Gift, LogOut, MessageSquare, Monitor, Moon, MoreHorizontal,
-  Package, RotateCcw, Scissors, Settings, Sun, TriangleAlert, UserRound, Users, Wallet, type LucideIcon,
+  CalendarCheck2, Package, RotateCcw, Scissors, Settings, Sun, TriangleAlert, UserRound, Users, Wallet, type LucideIcon,
 } from 'lucide-react'
 import { useMemo, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -53,11 +53,11 @@ function Brand() {
   return (
     <div className="brand">
       <div className="brand-mark" style={{ background: color }}>
-        <Scissors />
+        <CalendarCheck2 />
       </div>
       <div className="brand-text">
-        <b>{tenant?.name ?? 'Makas'}</b>
-        <span>{tenant ? 'Makas · Salon Paneli' : 'Platform Yönetimi'}</span>
+        <b>{tenant?.name ?? 'RandevuHazır'}</b>
+        <span>{tenant ? 'RandevuHazır · Salon Paneli' : 'Platform Yönetimi'}</span>
       </div>
     </div>
   )

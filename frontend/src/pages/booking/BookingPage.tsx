@@ -20,7 +20,7 @@ const ERR: Record<BookingError, string> = {
 
 function icsFile(title: string, date: string, start: number, end: number, location: string) {
   const dt = (m: number) => `${date.replace(/-/g, '')}T${String(Math.floor(m / 60)).padStart(2, '0')}${String(m % 60).padStart(2, '0')}00`
-  const body = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Makas//TR', 'BEGIN:VEVENT', `UID:${Date.now()}@makas`, `DTSTART;TZID=Europe/Istanbul:${dt(start)}`, `DTEND;TZID=Europe/Istanbul:${dt(end)}`, `SUMMARY:${title}`, `LOCATION:${location}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n')
+  const body = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//RandevuHazir//TR', 'BEGIN:VEVENT', `UID:${Date.now()}@randevuhazir`, `DTSTART;TZID=Europe/Istanbul:${dt(start)}`, `DTEND;TZID=Europe/Istanbul:${dt(end)}`, `SUMMARY:${title}`, `LOCATION:${location}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n')
   const a = document.createElement('a')
   a.href = URL.createObjectURL(new Blob([body], { type: 'text/calendar' }))
   a.download = 'randevu.ics'
@@ -257,7 +257,7 @@ export default function BookingPage() {
           {effStep === 'info' && <Button variant="primary" size="lg" disabled={!name.trim() || phone.replace(/\D/g, '').length < 10 || !kvkk} onClick={submit}>Randevuyu onayla</Button>}
         </footer>
       )}
-      <p className="bk-powered">Makas ile online randevu</p>
+      <p className="bk-powered">RandevuHazır ile online randevu</p>
     </div>
   )
 }

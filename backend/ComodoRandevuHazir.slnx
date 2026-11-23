@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ComodoRandevuHazir.Application/ComodoRandevuHazir.Application.csproj" />
+    <Project Path="src/ComodoRandevuHazir.Domain/ComodoRandevuHazir.Domain.csproj" />
+    <Project Path="src/ComodoRandevuHazir.Infrastructure/ComodoRandevuHazir.Infrastructure.csproj" />
+    <Project Path="src/ComodoRandevuHazir.WebApi/ComodoRandevuHazir.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ComodoRandevuHazir.Tests/ComodoRandevuHazir.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,4 +1,4 @@
-// Makas uçtan uca duman testi: her modülde gerçek etkileşim, adım adım PASS/FAIL + konsol hataları
+// RandevuHazır uçtan uca duman testi: her modülde gerçek etkileşim, adım adım PASS/FAIL + konsol hataları
 import puppeteer from 'puppeteer-core'
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5317/'
 const only = process.argv[2]
@@ -10,7 +10,7 @@ import { deflateRawSync } from 'node:zlib'
 import { writeFileSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-const TMP = mkdtempSync(join(tmpdir(), 'makas-e2e-'))
+const TMP = mkdtempSync(join(tmpdir(), 'randevuhazir-e2e-'))
 /** Excel benzeri gerçek .xlsx (zip + sharedStrings + sheet1) üretir */
 function makeXlsx(rows) {
   const strings = []; const si = (v) => { let i = strings.indexOf(v); if (i < 0) { strings.push(v); i = strings.length - 1 } return i }

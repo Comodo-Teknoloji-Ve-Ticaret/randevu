@@ -1,5 +1,5 @@
-// Makas tanıtım videosu üreticisi: canlı siteyi gezer, ekranı kaydeder, Yelda sesiyle seslendirir, altyazı ekler.
-// Kullanım: FFMPEG=/yol/ffmpeg node promo/make-video.mjs   (çıktı: promo/out/makas-tanitim.mp4)
+// RandevuHazır tanıtım videosu üreticisi: canlı siteyi gezer, ekranı kaydeder, Yelda sesiyle seslendirir, altyazı ekler.
+// Kullanım: FFMPEG=/yol/ffmpeg node promo/make-video.mjs   (çıktı: promo/out/randevuhazir-tanitim.mp4)
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -19,7 +19,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 /** Her parça: seslendirme metni + aynı anda ekranda yapılacak hareket. */
 const SEGMENTS = [
   { say: 'Randevular defterde, kasa hesap makinesinde, hatırlatmalar hep son dakikada mı?', act: () => card({ kicker: 'Kuaför · Berber · Güzellik salonu', title: 'Salonunuz hâlâ<br>defterle mi yönetiliyor?' }) },
-  { say: "Comodo'dan Makas ile salonunuzun tamamı, tek ekranda.", act: () => card({ logo: true, title: 'Makas', sub: 'Salon yönetimi, tek ekranda' }) },
+  { say: "Comodo'dan Randevu Hazır ile salonunuzun tamamı, tek ekranda.", act: () => card({ logo: true, title: 'RandevuHazır', sub: 'Salon yönetimi, tek ekranda' }) },
   { say: 'Günlük takvimde tüm personelinizi ve randevularını yan yana görürsünüz.', act: async () => { await hideCard(); await sweepColumns() } },
   { say: 'Boş bir saate tıklayın, müşteriyi ve hizmeti seçin. Randevu saniyeler içinde hazır.', act: newAppointment },
   { say: 'Online gelen talepler onay listesine düşer; tek tıkla onaylarsınız.', act: approvePending },
@@ -32,7 +32,7 @@ const SEGMENTS = [
   { say: 'Yarınki randevulara hatırlatmalar, tek tıkla SMS ya da WhatsApp ile gider.', act: messages },
   { say: 'Ciro, doluluk ve en çok kazandıran hizmetler, raporlarda bir bakışta.', act: reports },
   { say: 'Bilgisayarda, tablette ve telefonda çalışır; birden fazla şubeyi tek yerden yönetirsiniz.', act: phoneCard },
-  { say: "Makas. Salonunuz için, Comodo'dan.", act: () => card({ logo: true, title: 'Makas', sub: 'Salonunuz için, Comodo\'dan', foot: 'Demo: comodo-teknoloji-ve-ticaret.github.io/randevu' }) },
+  { say: "Randevu Hazır. Salonunuz için, Comodo'dan.", act: () => card({ logo: true, title: 'RandevuHazır', sub: 'Salonunuz için, Comodo\'dan', foot: 'Demo: comodo-teknoloji-ve-ticaret.github.io/randevu' }) },
 ]
 
 // ---------- Ses ----------
@@ -76,7 +76,7 @@ const OVERLAY = () => {
   document.body.appendChild(cap)
 }
 
-const SCISSORS = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>'
+const LOGO = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 10h18M8 2v4M16 2v4"/><path d="m9 16 2 2 4-4"/></svg>'
 
 async function caption(text) {
   await ev((t) => { const c = document.getElementById('promo-cap'); c.textContent = t; c.style.opacity = t ? '1' : '0' }, text)
@@ -88,7 +88,7 @@ async function card({ kicker, title, sub, foot, logo, html, cursor }) {
     el.style.opacity = '1'
     document.getElementById('promo-cursor').style.opacity = o.cursor ? '1' : '0'
     el.innerHTML = o.html ?? `<div>${o.logo ? `<div class="logo">${sc}</div>` : ''}${o.kicker ? `<div class="k">${o.kicker}</div>` : ''}<h1>${o.title}</h1>${o.sub ? `<div class="s">${o.sub}</div>` : ''}</div>${o.foot ? `<div class="f">${o.foot}</div>` : ''}`
-  }, { kicker, title, sub, foot, logo, html, cursor }, SCISSORS)
+  }, { kicker, title, sub, foot, logo, html, cursor }, LOGO)
 }
 async function hideCard() {
   await ev(() => { const el = document.getElementById('promo-card'); document.getElementById('promo-cursor').style.opacity = '1'; if (el) { el.style.opacity = '0'; setTimeout(() => el.remove(), 500) } })
@@ -314,5 +314,5 @@ const mix = SEGMENTS.map((_, i) => `[a${i}]`).join('') + `amix=inputs=${SEGMENTS
 execFileSync(FF, ['-y', '-loglevel', 'error', '-i', join(OUT, 'screen.webm'), ...inputs,
   '-filter_complex', `${delays};${mix}`, '-map', '0:v', '-map', '[aout]', '-t', total.toFixed(2),
   '-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p', '-r', '30', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart',
-  join(OUT, 'makas-tanitim.mp4')], { stdio: 'inherit' })
-console.log('Hazır:', join(OUT, 'makas-tanitim.mp4'), `(${total.toFixed(1)} sn)`)
+  join(OUT, 'randevuhazir-tanitim.mp4')], { stdio: 'inherit' })
+console.log('Hazır:', join(OUT, 'randevuhazir-tanitim.mp4'), `(${total.toFixed(1)} sn)`)

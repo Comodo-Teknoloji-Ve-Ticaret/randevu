@@ -166,7 +166,7 @@ function InviteModal({ tenantId, onClose }: { tenantId: string; onClose: () => v
   const owner = db.users.find((u) => u.tenantId === t.id && u.role === 'owner')
   const inv = t.invite
   const url = inv ? inviteUrl(inv.token) : ''
-  const msg = `Merhaba${owner ? ` ${owner.name.split(' ')[0]}` : ''}, ${t.name} için Makas salon paneliniz hazır. Bu bağlantıdan giriş yapabilirsiniz: ${url}`
+  const msg = `Merhaba${owner ? ` ${owner.name.split(' ')[0]}` : ''}, ${t.name} için RandevuHazır salon paneliniz hazır. Bu bağlantıdan giriş yapabilirsiniz: ${url}`
   return (
     <Modal title={`Davet linki · ${t.name}`} onClose={onClose} footer={<Button variant="ghost" onClick={onClose}>Kapat</Button>}>
       {!inv || inv.usedAt ? (

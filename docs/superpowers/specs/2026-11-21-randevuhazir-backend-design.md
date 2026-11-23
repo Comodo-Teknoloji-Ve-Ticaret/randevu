@@ -1,4 +1,4 @@
-# Makas — Backend Tasarımı
+# RandevuHazır — Backend Tasarımı
 
 Tarih: 2026-11-21 · Durum: kullanıcı onayladı ("onay başla")
 
@@ -24,11 +24,11 @@ Neden 3: ekranlar değişmez (kullanıcı şartı), mevcut 136 birim + 118 e2e t
 
 ## 5. Mimari
 - `backend/` — .NET 10 (LTS), Clean Architecture (Comodo düzeni, Detailing ile aynı adlandırma):
-  - `ComodoMakas.Domain` — varlıklar, kurallar (çakışma, lisans, para).
-  - `ComodoMakas.Application` — kullanım senaryoları: kimlik doğrulama, senkron/batch, yetki, doğrulayıcılar, public booking.
-  - `ComodoMakas.Infrastructure` — EF Core + Npgsql, şifre özeti, JWT üretimi, seed içe aktarma.
-  - `ComodoMakas.WebApi` — Minimal API uç noktaları, ProblemDetails hata biçimi, CORS.
-  - `tests/ComodoMakas.Tests` — xUnit; birim + gerçek PostgreSQL'e karşı entegrasyon testleri.
+  - `ComodoRandevuHazir.Domain` — varlıklar, kurallar (çakışma, lisans, para).
+  - `ComodoRandevuHazir.Application` — kullanım senaryoları: kimlik doğrulama, senkron/batch, yetki, doğrulayıcılar, public booking.
+  - `ComodoRandevuHazir.Infrastructure` — EF Core + Npgsql, şifre özeti, JWT üretimi, seed içe aktarma.
+  - `ComodoRandevuHazir.WebApi` — Minimal API uç noktaları, ProblemDetails hata biçimi, CORS.
+  - `tests/ComodoRandevuHazir.Tests` — xUnit; birim + gerçek PostgreSQL'e karşı entegrasyon testleri.
 - **Veri modeli:** ön yüzdeki 20 koleksiyonun her biri bir tablo; kimlikler ön yüzdeki gibi metin (`a_xxxx`). İç içe yapılar (çalışma saatleri, randevu kalemleri, adisyon satırları/ödemeler, oranlar) `jsonb` sütun. Her kiracı tablosunda `tenant_id` + EF Core global query filter.
 - **Kimlik:** `users` tablosuna `email` (benzersiz, küçük harf) ve `password_hash` (ASP.NET Identity `PasswordHasher`, PBKDF2). Giriş → kısa ömürlü JWT (8 saat) içinde `sub`, `tenant`, `role`, `branches`. Platform yöneticisi `tenant` taşımaz.
 - **Yetki:** sahip her şeyi; resepsiyon ayarlar/personel primleri/lisans hariç; personel yalnız kendi randevuları ve kendi adisyon satırları (okuma ağırlıklı). Kesin matris ön yüzdeki mevcut ekran yetkilerinden çıkarılır.
