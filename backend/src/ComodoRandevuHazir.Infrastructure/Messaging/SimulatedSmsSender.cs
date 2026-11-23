@@ -13,11 +13,11 @@ public class SimulatedSmsSender(ILogger<SimulatedSmsSender> log) : ISmsSender
 
     public IReadOnlyCollection<OutgoingSms> Sent => _sent;
 
-    public Task SendAsync(string to, string body, CancellationToken ct)
+    public Task<SmsResult> SendAsync(OutgoingSms sms, CancellationToken ct)
     {
-        _sent.Enqueue(new OutgoingSms(to, body));
+        _sent.Enqueue(sms);
         while (_sent.Count > 500) _sent.TryDequeue(out _);
-        log.LogInformation("SMS (simülasyon) → {To}: {Length} karakter", to[..3] + "*******", body.Length);
-        return Task.CompletedTask;
+        log.LogInformation("SMS (simülasyon) → {To}: {Length} karakter", sms.To[..3] + "*******", sms.Body.Length);
+        return Task.FromResult(new SmsResult(true, null, null));
     }
 }

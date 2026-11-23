@@ -80,7 +80,17 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
         await CheckUniqueSlugsAsync(rows, ct);
         await records.ApplyAsync(rows, dels, ct);
         // Kayıt kesinleştikten sonra gönder: reddedilen bir batch SMS göndermez.
-        foreach (var m in outgoing) await sms.SendAsync(m.To, m.Body, ct);
+        // Gerçek sağlayıcıda sonuç (iletildi / iletilemedi + neden) mesaj kaydına yazılır.
+        foreach (var m in outgoing)
+        {
+            var result = await sms.SendAsync(m, ct);
+            if (sms.LogStatus == "simulated" || rows.FirstOrDefault(r => r.Collection == "messages" && r.Id == m.MessageId) is not { } row) continue;
+            var data = JsonNode.Parse(row.Data)!.AsObject();
+            data["status"] = result.Ok ? "sent" : "failed";
+            if (result.ProviderRef is not null) data["providerRef"] = result.ProviderRef;
+            if (result.Error is not null) data["error"] = result.Error;
+            await records.UpsertManyAsync([row with { Data = data.ToJsonString() }], ct);
+        }
         return rows.Count + dels.Count;
     }
 

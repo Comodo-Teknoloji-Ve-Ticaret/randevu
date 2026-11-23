@@ -85,10 +85,16 @@ public record BatchDelete(string Collection, string Id);
 public record BatchRequest(List<BatchUpsert>? Upserts, List<BatchDelete>? Deletes);
 public record RecordKey(string Collection, string Id);
 
-/// <summary>SMS sağlayıcısı (Netgsm, İleti Merkezi…). Varsayılan: simülasyon — gerçek gönderim yapılmaz.</summary>
+/// <summary>Gönderilecek SMS. Commercial: kampanya/kutlama (İYS izni gerekir); hatırlatma/onay/iptal hizmet mesajıdır.</summary>
+public record OutgoingSms(string MessageId, string? TenantId, string To, string Body, bool Commercial);
+
+public record SmsResult(bool Ok, string? ProviderRef, string? Error);
+
+/// <summary>SMS sağlayıcısı (Netgsm, İleti Merkezi). Varsayılan: simülasyon — gerçek gönderim yapılmaz.</summary>
 public interface ISmsSender
 {
-    /// <summary>Mesaj kaydına yazılan durum: simülasyonda "simulated".</summary>
+    /// <summary>Kayda ilk yazılan durum: simülasyonda "simulated", gerçek sağlayıcıda "queued" (sonra sent/failed).</summary>
     string LogStatus { get; }
-    Task SendAsync(string to, string body, CancellationToken ct);
+    /// <summary>Hata fırlatmaz; sonucu döner (kayıt zaten kesinleşmiştir).</summary>
+    Task<SmsResult> SendAsync(OutgoingSms sms, CancellationToken ct);
 }

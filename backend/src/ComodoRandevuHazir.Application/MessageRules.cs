@@ -3,8 +3,6 @@ using static ComodoRandevuHazir.Application.RecordRules;
 
 namespace ComodoRandevuHazir.Application;
 
-public record OutgoingSms(string To, string Body);
-
 /// <summary>
 /// Mesaj kaydı gönderim geçmişidir: değiştirilemez, silinemez. SMS yalnız ileti izni olan müşteriye
 /// ve yalnız müşterinin kayıtlı numarasına gider (istemcinin yazdığı numaraya asla). WhatsApp salonun
@@ -36,7 +34,7 @@ public class MessageRules(IRecordStore records, ISmsSender sms)
             var to = Str(customer, "phone") is { Length: > 0 } p ? p : throw new ValidationException("Müşterinin telefon numarası yok.");
             m.Data["to"] = to;
             m.Data["status"] = sms.LogStatus;
-            outgoing.Add(new OutgoingSms(to, Str(m.Data, "body")!));
+            outgoing.Add(new OutgoingSms(m.Id, m.TenantId, to, Str(m.Data, "body")!, Commercial: Str(m.Data, "kind") is "birthday" or "winback"));
         }
         return outgoing;
     }

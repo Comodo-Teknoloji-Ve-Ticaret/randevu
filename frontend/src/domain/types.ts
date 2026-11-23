@@ -319,7 +319,9 @@ export interface MessageLog {
   channel: 'sms' | 'whatsapp'
   to: string
   body: string
-  status: 'simulated' | 'opened'
+  /** simulated: demo; queued/sent/failed: gerçek SMS sağlayıcısı; opened: WhatsApp elle açıldı */
+  status: 'simulated' | 'opened' | 'queued' | 'sent' | 'failed'
+  error?: string
   at: string
 }
 

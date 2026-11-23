@@ -4,13 +4,21 @@ import { messageService } from '../../application/messageService'
 import { formatPhone } from '../../domain/phone'
 import { renderTemplate, TEMPLATE_VARS } from '../../domain/template'
 import { addDays, formatDate, todayIstanbul, toHHMM } from '../../domain/time'
-import type { Appointment, MessageKind, MessageTemplate } from '../../domain/types'
+import type { Appointment, MessageKind, MessageLog, MessageTemplate } from '../../domain/types'
 import { useSession } from '../../app/session'
 import { useRepos } from '../../infrastructure'
 import { Avatar, Badge, Button, EmptyState, Field, Kpi, Modal, PageHeader, Switch, Tabs, Textarea, useToast } from '../../ui'
 import './messages.css'
 
 const KIND_LABEL: Record<MessageKind, string> = { confirm: 'Onay', reminder: 'Hatırlatma', cancel: 'İptal', birthday: 'Doğum günü', winback: 'Geri kazanım' }
+
+const STATUS: Record<MessageLog['status'], { label: string; tone: 'info' | 'success' | 'danger' | 'neutral' }> = {
+  simulated: { label: 'SMS (demo)', tone: 'info' },
+  queued: { label: 'SMS sırada', tone: 'neutral' },
+  sent: { label: 'SMS iletildi', tone: 'success' },
+  failed: { label: 'SMS iletilemedi', tone: 'danger' },
+  opened: { label: 'WhatsApp açıldı', tone: 'success' },
+}
 
 export default function MessagesPage() {
   const [tab, setTab] = useState<'today' | 'templates' | 'log'>('today')
@@ -200,7 +208,8 @@ function LogTab() {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div className="t-small muted">{formatDate(m.at.slice(0, 10))} {m.at.slice(11, 16)}</div>
-                <Badge tone={m.status === 'simulated' ? 'info' : 'success'}>{m.status === 'simulated' ? 'SMS (demo)' : 'WhatsApp açıldı'}</Badge>
+                <Badge tone={STATUS[m.status].tone}>{STATUS[m.status].label}</Badge>
+                {m.status === 'failed' && m.error && <span className="t-small" style={{ color: 'var(--danger)' }}>{m.error}</span>}
               </div>
             </div>
           )
