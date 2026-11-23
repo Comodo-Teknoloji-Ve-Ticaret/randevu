@@ -11,6 +11,7 @@ import { addDays, formatDate, todayIstanbul } from '../../domain/time'
 import type { BusinessType, Tenant } from '../../domain/types'
 import { useDbSnapshot, useStore } from '../../infrastructure'
 import { Badge, Button, cx, Drawer, Field, Input, Kpi, Modal, PageHeader, Popover, Segmented, Select, useConfirm, useToast } from '../../ui'
+import { inviteMessage } from '../../domain/links'
 import { bookingUrl } from '../settings/SettingsPage'
 import '../settings/settings.css'
 import { UsersDrawer } from './UsersDrawer'
@@ -170,7 +171,8 @@ function InviteModal({ tenantId, onClose }: { tenantId: string; onClose: () => v
   const owner = db.users.find((u) => u.tenantId === t.id && u.role === 'owner')
   const inv = t.invite
   const url = inv ? inviteUrl(inv.token) : ''
-  const msg = `Merhaba${owner ? ` ${owner.name.split(' ')[0]}` : ''}, ${t.name} için RandevuHazır salon paneliniz hazır. Bu bağlantıdan giriş yapabilirsiniz: ${url}`
+  const booking = bookingUrl(t.slug)
+  const msg = inviteMessage({ ownerName: owner?.name, salon: t.name, inviteUrl: url, bookingUrl: booking })
   return (
     <Modal title={`Davet linki · ${t.name}`} onClose={onClose} footer={<Button variant="ghost" onClick={onClose}>Kapat</Button>}>
       {!inv || inv.usedAt ? (
@@ -185,6 +187,11 @@ function InviteModal({ tenantId, onClose }: { tenantId: string; onClose: () => v
           <div className="invite-box">
             <code>{url}</code>
             <Button icon={Copy} onClick={() => { navigator.clipboard?.writeText(url); toast('Link kopyalandı') }}>Kopyala</Button>
+          </div>
+          <p className="muted t-small" style={{ marginTop: 4 }}>Salonun müşterilerine vereceği <b>online randevu linki</b> (mesaja da eklenir):</p>
+          <div className="invite-box">
+            <code>{booking}</code>
+            <Button icon={Copy} onClick={() => { navigator.clipboard?.writeText(booking); toast('Randevu linki kopyalandı') }}>Kopyala</Button>
           </div>
           <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
             <Button variant="success" icon={MessageCircle} onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener')}>WhatsApp ile gönder</Button>

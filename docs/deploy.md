@@ -88,6 +88,7 @@ curl https://ALANADINIZ/api/health        # {"status":"ok"} dönmeli
 2. **Yeni işletme** düğmesine basın, salonu oluşturun ve davet linkini kopyalayın.
 3. Linki salon sahibine gönderin. Sahip linki açınca adını, telefonunu, e-postasını ve şifresini kendisi belirler.
 4. Sahip, personeline **Ayarlar → Kullanıcılar** ekranından giriş e-postası ve şifre verir.
+5. Salonun müşterilerine vereceği randevu linki kısa adrestir: `https://ALANADINIZ/salon-adi`. Bu link davet mesajında da yer alır. Salon sahibi linki **Ayarlar → Salon** ekranında görür. Aynı ekranda **QR kod** düğmesi vardır; buradan PNG indirebilir ya da tezgâh için A4 afiş yazdırabilir.
 
 > Gerçek sunucuda demo hesapları ve "Demo verisini sıfırla" düğmesi görünmez; `docker-compose.prod.yml` bunları kapatır.
 

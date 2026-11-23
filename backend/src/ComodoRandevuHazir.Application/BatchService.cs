@@ -194,12 +194,21 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
                 throw new ConflictException("Bu telefonla kayıtlı bir müşteri zaten var.");
     }
 
+    /// <summary>Kısa link alanadi/&lt;ad&gt; biçiminde; ön yüz domain/links.ts ile aynı ayrılmış adlar.</summary>
+    private static readonly HashSet<string> ReservedSlugs = ["api", "assets", "r", "davet", "giris", "admin", "www", "static", "index", "favicon", "robots", "sitemap"];
+
+    [GeneratedRegex("^[a-z0-9-]{1,60}$")]
+    private static partial Regex SlugPattern();
+
     private async Task CheckUniqueSlugsAsync(List<RecordRow> rows, CancellationToken ct)
     {
         foreach (var r in rows.Where(r => r.Collection == "tenants"))
-            if (JsonNode.Parse(r.Data)?["slug"] is JsonValue v && v.TryGetValue<string>(out var slug) && slug.Length > 0
-                && await records.FindTenantBySlugAsync(slug, ct) is { } other && other.Id != r.Id)
+        {
+            if (JsonNode.Parse(r.Data)?["slug"] is not JsonValue v || !v.TryGetValue<string>(out var slug)) continue;
+            if (!SlugPattern().IsMatch(slug)) throw new ValidationException("Bağlantı adı yalnız küçük harf, rakam ve tire içerebilir.");
+            if (ReservedSlugs.Contains(slug) || await records.FindTenantBySlugAsync(slug, ct) is { } other && other.Id != r.Id)
                 throw new ConflictException("Bu online randevu adresi başka bir salon tarafından kullanılıyor.");
+        }
     }
 
     private async Task CheckReferencesAsync(List<RecordRow> rows, CancellationToken ct)

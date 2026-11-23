@@ -2,6 +2,7 @@ import { licenseStatus } from '../domain/license'
 import { addDays, diffDays } from '../domain/time'
 import type { BusinessType, CategoryKey, Tenant } from '../domain/types'
 import { istanbulClock, type Clock } from './appointmentService'
+import { isReservedSlug } from '../domain/links'
 import { normalizePhone } from '../domain/phone'
 import { DEFAULT_EXPENSE_CATS } from '../infrastructure/localStore'
 import { TEMPLATES } from '../infrastructure/seed'
@@ -39,7 +40,8 @@ export function tenantAccess(t: Tenant, today: string): 'ok' | 'suspended' | 'li
 
 /** Comodo platform yönetimi: salon (kiracı) oluşturma ve askıya alma. */
 export function platformService(store: Store, clock: Clock = istanbulClock) {
-  const slugTaken = (slug: string, exceptId?: string) => store.read().tenants.some((t) => t.slug === slug && t.id !== exceptId)
+  /** Başka salonda kullanılıyor ya da sitenin kendi yollarıyla çakışıyor (kısa link: alanadi/<ad>). */
+  const slugTaken = (slug: string, exceptId?: string) => isReservedSlug(slug) || store.read().tenants.some((t) => t.slug === slug && t.id !== exceptId)
 
   function createSalon(input: NewSalon): { ok: true; tenant: Tenant } | { ok: false; error: 'slug_taken' | 'invalid' } {
     const slug = slugify(input.slug || input.name)

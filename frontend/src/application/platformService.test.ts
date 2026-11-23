@@ -15,6 +15,11 @@ describe('platformService', () => {
     expect(db.categories.filter((c) => c.tenantId === res.tenant.id).length).toBeGreaterThan(0)
     expect(db.templates.filter((t) => t.tenantId === res.tenant.id).length).toBe(5)
   })
+  it('rejects reserved link names that would clash with the site (kısa link)', () => {
+    const r = setup()
+    expect(platformService(r.store).createSalon({ name: 'X', slug: 'api', ownerName: 'A', branchName: 'M' })).toEqual({ ok: false, error: 'slug_taken' })
+    expect(platformService(r.store).slugTaken('assets')).toBe(true)
+  })
   it('rejects a slug that is already used', () => {
     const r = setup() // slug 'test'
     expect(platformService(r.store).createSalon({ name: 'X', slug: 'Test', ownerName: 'A', branchName: 'M', plan: 'pro' })).toEqual({ ok: false, error: 'slug_taken' })

@@ -1,10 +1,11 @@
-import { Building2, Copy, CreditCard, Landmark, ExternalLink, Globe, Monitor, Moon, Palette, Plus, Sun, UserPlus, Users } from 'lucide-react'
+import { Building2, Copy, CreditCard, Landmark, ExternalLink, Globe, Monitor, Moon, Palette, Plus, QrCode, Sun, UserPlus, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { newId } from '../../application/db'
 import { platformService, slugify } from '../../application/platformService'
 import { ROLE_LABEL } from '../../app/permissions'
 import { useSession } from '../../app/session'
 import { formatTRY } from '../../domain/money'
+import { bookingLink } from '../../domain/links'
 import { PLAN } from '../../domain/plan'
 import { formatPhone } from '../../domain/phone'
 import type { Branch, Role, User } from '../../domain/types'
@@ -13,6 +14,7 @@ import { apiFetch, apiMode } from '../../infrastructure/api'
 import { Avatar, Badge, Button, cx, Drawer, Field, Input, PageHeader, Select, Switch, useToast } from '../../ui'
 import { HoursEditor } from '../staff/StaffPage'
 import { LegalDialog, type LegalDoc } from '../../ui/LegalDialog'
+import { QrDialog } from '../../ui/QrDialog'
 import '../staff/staff.css'
 import './settings.css'
 
@@ -27,7 +29,8 @@ const SECTIONS: { key: Section; label: string; icon: typeof Building2 }[] = [
 ]
 const BRAND_COLORS = ['#6c5ce7', '#12a37b', '#0984e3', '#e17055', '#e84393', '#2d3436', '#b8860b', '#00b894']
 
-export const bookingUrl = (slug: string) => `${location.origin}${location.pathname}#/r/${slug}`
+/** Müşterilere verilecek randevu linki: sunucuda kısa (alanadi/salon), demo sitede uygulama içi biçim. */
+export const bookingUrl = (slug: string) => bookingLink(slug, location, apiMode)
 
 export default function SettingsPage() {
   const [sec, setSec] = useState<Section>('salon')
@@ -60,6 +63,7 @@ function SalonSection() {
   const { tenant } = useSession()
   const [name, setName] = useState(tenant?.name ?? '')
   const [slug, setSlug] = useState(tenant?.slug ?? '')
+  const [qr, setQr] = useState(false)
   if (!tenant) return null
   const save = () => {
     const s = slugify(slug)
@@ -86,8 +90,10 @@ function SalonSection() {
           <Input value={slug} onChange={(e) => setSlug(e.target.value)} />
           <Button icon={Copy} onClick={() => { navigator.clipboard?.writeText(bookingUrl(tenant.slug)); toast('Bağlantı kopyalandı') }}>Kopyala</Button>
           <Button icon={ExternalLink} onClick={() => window.open(bookingUrl(tenant.slug), '_blank')}>Aç</Button>
+          <Button icon={QrCode} onClick={() => setQr(true)}>QR kod</Button>
         </div>
         <code className="set-url">{bookingUrl(tenant.slug)}</code>
+        {qr && <QrDialog url={bookingUrl(tenant.slug)} salon={tenant.name} slug={tenant.slug} onClose={() => setQr(false)} />}
       </Field>
       <div className="row" style={{ justifyContent: 'flex-end' }}><Button variant="primary" onClick={save}>Kaydet</Button></div>
     </div>

@@ -671,6 +671,21 @@ const suites = {
     await step('Ayarlar: şube düzenle', async () => { await clickText('Şubeler & saatler', '.set-nav button'); await page.click('.set-body .list-item'); await sleep(300); await clickText('Kaydet', '.drawer-foot button'); await expectText('Şube kaydedildi') })
     await step('Ayarlar: kullanıcı ekle', async () => { await clickText('Kullanıcılar', '.set-nav button'); await clickText('Kullanıcı ekle', '.set-body button'); await fill('Ad Soyad', 'Yeni Resepsiyon'); await clickText('Kaydet', '.drawer-foot button'); await expectText('Yeni Resepsiyon') })
     await step('Ayarlar: online randevu', async () => { await clickText('Online randevu', '.set-nav button'); await page.click('.set-row .switch'); await sleep(200); await page.click('.set-row .switch') })
+    await step('Ayarlar: QR kod telefonla okunur ve randevu linkini verir', async () => {
+      await clickText('Salon', '.set-nav button'); await clickText('QR kod', '.set-body button'); await sleep(400)
+      const r = await page.evaluate(async () => {
+        const svg = document.querySelector('.qr-img svg').outerHTML
+        const url = document.querySelector('.qr-box code').textContent
+        if (!('BarcodeDetector' in window)) return { skip: true }
+        const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); await img.decode()
+        const c = document.createElement('canvas'); c.width = c.height = 600; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0, 600, 600)
+        const found = await new window.BarcodeDetector({ formats: ['qr_code'] }).detect(c)
+        return { url, got: found[0]?.rawValue }
+      })
+      if (!r.skip && r.got !== r.url) throw new Error(`QR okunamadı: ${r.got} ≠ ${r.url}`)
+      if (!/studio-lara$/.test(r.url ?? 'studio-lara')) throw new Error('link salona ait değil: ' + r.url)
+      await page.keyboard.press('Escape'); await sleep(200)
+    })
     await step('Ayarlar: tema', async () => { await clickText('Görünüm', '.set-nav button'); await clickText('Gece', '.theme-card'); const th = await page.evaluate(() => document.documentElement.dataset.theme); if (th !== 'dark') throw new Error('tema değişmedi'); await clickText('Ferah', '.theme-card') })
   },
   async platform() {
@@ -683,7 +698,7 @@ const suites = {
       await clickText('Berber', '.type-opt')
       await fill('İşletme adı', 'Test Berber'); await fill('İşletme sahibinin adı', 'Ali Test')
       await clickText('Oluştur ve davet linkini al', '.drawer-foot button'); await sleep(300)
-      await expectText('Davet linki · Test Berber')
+      await expectText('Davet linki · Test Berber'); await expectText('online randevu linki')
     })
     await step('Platform: davet linki ile giriş', async () => {
       const url = await page.evaluate(() => document.querySelector('.invite-box code').textContent)
@@ -799,6 +814,11 @@ const suites = {
       await page.click('.bk-kvkk input')
       await clickText('Randevuyu onayla', '.bk-bar button'); await sleep(400)
       await expectText('Talebiniz alındı')
+    })
+    if (API) await step('Online randevu: kısa link (alanadi/salon) randevu sayfasını açar', async () => {
+      await page.goto('about:blank'); await page.goto(BASE + 'studio-lara', { waitUntil: 'networkidle0' }); await sleep(600)
+      if (!page.url().includes('#/r/studio-lara')) throw new Error('yönlenmedi: ' + page.url())
+      await expectText('Studio Lara')
     })
     await step('Online randevu: çok şubeli salon', async () => { await go('/r/studio-lara'); await clickText('Konyaaltı', '.bk-option'); await expectText('Hangi hizmeti') })
   },

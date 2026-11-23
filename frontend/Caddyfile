@@ -4,6 +4,12 @@
 	handle /api/* {
 		reverse_proxy api:8080
 	}
+	# Kısa randevu linki: alanadi/studio-lara → randevu sayfası (ayrılmış adlar hariç; bkz. domain/links.ts)
+	@booking {
+		path_regexp slug ^/([a-z0-9-]+)/?$
+		not path /api /assets /r /davet /giris /admin /www /static /index /favicon /robots /sitemap
+	}
+	redir @booking /#/r/{re.slug.1} 302
 	handle {
 		root * /srv
 		try_files {path} /index.html
