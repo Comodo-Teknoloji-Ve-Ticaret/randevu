@@ -8,7 +8,7 @@ namespace ComodoRandevuHazir.Application;
 /// Ön yüzün değişikliklerini (eklenen/güncellenen/silinen kayıtlar) tek işlemde uygular.
 /// Her kayıt kiracıya bağlanır; rol yetkisi, korunan alanlar ve kiracı içi başvurular doğrulanır.
 /// </summary>
-public partial class BatchService(IRecordStore records)
+public partial class BatchService(IRecordStore records, CashRules cash)
 {
     public const int MaxOperations = 5000;
     private const string NoAccess = "Bu kayda erişim yetkiniz yok.";
@@ -42,7 +42,7 @@ public partial class BatchService(IRecordStore records)
         var me = platform ? null : await records.GetAsync("users", who.UserId, ct);
         var myStaffId = me is null ? null : JsonNode.Parse(me.Data)?["staffId"]?.GetValue<string>();
 
-        var rows = new List<RecordRow>();
+        var pending = new List<PendingWrite>();
         foreach (var (collection, id, data) in ups)
         {
             var old = existing.GetValueOrDefault(new RecordKey(collection, id));
@@ -50,16 +50,24 @@ public partial class BatchService(IRecordStore records)
             var tenantId = platform ? PlatformTenant(collection, id, data) : ScopeToCaller(who.TenantId!, collection, id, data, old);
             if (!platform) Authorize(who, myStaffId, collection, data, oldData);
             RecordRules.Validate(collection, data);
-            rows.Add(new RecordRow(collection, id, tenantId, data.ToJsonString()));
+            pending.Add(new PendingWrite(collection, id, tenantId, data, oldData));
         }
+        var pendingDeletes = new List<PendingDelete>();
         foreach (var key in dels)
         {
             if (!existing.TryGetValue(key, out var old)) continue; // zaten yok: silme idempotent
-            if (platform) continue;
-            if (old.TenantId != who.TenantId || key.Collection == "tenants") throw new ForbiddenException(NoAccess);
-            if (key.Collection == "users" && key.Id == who.UserId) throw new ForbiddenException("Kendi hesabınızı silemezsiniz.");
-            Authorize(who, myStaffId, key.Collection, null, JsonNode.Parse(old.Data)!.AsObject());
+            var oldData = JsonNode.Parse(old.Data)!.AsObject();
+            if (!platform)
+            {
+                if (old.TenantId != who.TenantId || key.Collection == "tenants") throw new ForbiddenException(NoAccess);
+                if (key.Collection == "users" && key.Id == who.UserId) throw new ForbiddenException("Kendi hesabınızı silemezsiniz.");
+                Authorize(who, myStaffId, key.Collection, null, oldData);
+            }
+            pendingDeletes.Add(new PendingDelete(key, old.TenantId, oldData));
         }
+
+        await cash.CheckAsync(who, pending, pendingDeletes, ct); // gün sonu beklenen nakdi burada yazılır
+        var rows = pending.Select(w => new RecordRow(w.Collection, w.Id, w.TenantId, w.Data.ToJsonString())).ToList();
 
         await CheckReferencesAsync(rows, ct);
         await CheckUniquePhonesAsync(rows, ct);

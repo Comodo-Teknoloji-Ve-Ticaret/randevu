@@ -8,6 +8,7 @@ public static class DependencyInjection
         .AddScoped<ImportService>()
         .AddScoped<AuthService>()
         .AddScoped<SyncService>()
+        .AddScoped<CashRules>()
         .AddScoped<BatchService>()
         .AddScoped<PublicBookingService>();
 }
