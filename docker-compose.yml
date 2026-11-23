@@ -1,0 +1,35 @@
+# RandevuHazır — yerel geliştirme ve sunucu kurulumu
+# Kullanım: docker compose up -d        (API: http://localhost:8080, veritabanı: localhost:5432)
+# Ayarlar .env dosyasından okunur (bkz. .env.example); sunucuda şifreleri mutlaka değiştirin.
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-randevuhazir}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-randevuhazir}
+      POSTGRES_DB: ${DB_NAME:-randevuhazir}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-randevuhazir}"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Db: Host=db;Database=${DB_NAME:-randevuhazir};Username=${DB_USER:-randevuhazir};Password=${DB_PASSWORD:-randevuhazir}
+      Jwt__Key: ${JWT_KEY:-yerel-gelistirme-anahtari-en-az-32-karakter-uzunlugunda}
+      Cors__Origins__0: ${CORS_ORIGIN:-http://127.0.0.1:5317}
+    ports:
+      - "${API_PORT:-8080}:8080"
+
+volumes:
+  dbdata:
