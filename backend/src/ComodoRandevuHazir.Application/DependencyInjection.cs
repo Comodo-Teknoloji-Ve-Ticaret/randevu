@@ -12,5 +12,6 @@ public static class DependencyInjection
         .AddScoped<StockPackageRules>()
         .AddScoped<MessageRules>()
         .AddScoped<BatchService>()
-        .AddScoped<PublicBookingService>();
+        .AddScoped<PublicBookingService>()
+        .AddScoped<AccountService>();
 }

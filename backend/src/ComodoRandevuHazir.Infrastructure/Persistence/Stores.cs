@@ -83,6 +83,18 @@ public partial class RecordStore
             .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
             .FirstOrDefaultAsync(ct);
 
+    public async Task<RecordRow?> FindTenantByInviteAsync(string token, CancellationToken ct) =>
+        await db.Records.FromSqlInterpolated($"SELECT * FROM records WHERE collection = 'tenants' AND data -> 'invite' ->> 'token' = {token}")
+            .AsNoTracking()
+            .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
+            .FirstOrDefaultAsync(ct);
+
+    public async Task ClearAllAsync(CancellationToken ct)
+    {
+        await db.Records.ExecuteDeleteAsync(ct);
+        await db.Credentials.ExecuteDeleteAsync(ct);
+    }
+
     public async Task<T> InLockAsync<T>(string key, Func<Task<T>> body, CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -98,6 +110,9 @@ public class CredentialStore(AppDbContext db) : ICredentialStore
     public async Task<Credential?> FindByEmailAsync(string email, CancellationToken ct) =>
         await db.Credentials.AsNoTracking().Where(c => c.Email == email)
             .Select(c => new Credential(c.UserId, c.Email, c.PasswordHash)).FirstOrDefaultAsync(ct);
+
+    public async Task<IReadOnlyDictionary<string, string>> EmailsAsync(IReadOnlyCollection<string> userIds, CancellationToken ct) =>
+        await db.Credentials.AsNoTracking().Where(c => userIds.Contains(c.UserId)).ToDictionaryAsync(c => c.UserId, c => c.Email, ct);
 
     public async Task SetAsync(Credential c, CancellationToken ct)
     {

@@ -82,7 +82,8 @@ public static class Fixture
       "version": 3,
       "tenants": [
         { "id": "t_a", "name": "Salon A", "slug": "salon-a", "status": "active", "license": { "start": "{{Today}}", "days": 30 }, "brands": [], "plan": "pro", "logoColor": "#6c5ce7",
-          "onlineBooking": { "enabled": true, "requireApproval": true, "maxDaysAhead": 30, "minLeadMinutes": 60 } },
+          "onlineBooking": { "enabled": true, "requireApproval": true, "maxDaysAhead": 30, "minLeadMinutes": 60 },
+          "invite": { "token": "davet-a-123", "createdAt": "{{Today}}" } },
         { "id": "t_b", "name": "Salon B", "slug": "salon-b", "status": "active", "license": { "start": "{{Today}}", "days": 30 } },
         { "id": "t_old", "name": "Eski Salon", "slug": "eski", "status": "active", "license": { "start": "{{DaysAgo(40)}}", "days": 30 } },
         { "id": "t_off", "name": "Askıda", "slug": "askida", "status": "suspended", "license": { "start": "{{Today}}", "days": 30 } }

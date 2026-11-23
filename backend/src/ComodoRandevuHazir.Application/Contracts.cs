@@ -23,6 +23,9 @@ public interface IRecordStore
     /// <summary>Kiracının bir koleksiyonunda üst düzey metin alanı eşleşen kayıtlar (ör. tarih, telefon).</summary>
     Task<IReadOnlyList<RecordRow>> ListByFieldAsync(string tenantId, string collection, string field, string value, CancellationToken ct);
     Task<RecordRow?> FindTenantBySlugAsync(string slug, CancellationToken ct);
+    Task<RecordRow?> FindTenantByInviteAsync(string token, CancellationToken ct);
+    /// <summary>Tüm kayıtları ve giriş bilgilerini siler (yalnız demo sıfırlama).</summary>
+    Task ClearAllAsync(CancellationToken ct);
     /// <summary>Aynı anahtarla gelen işlemleri sıraya sokar (ör. aynı gün için eşzamanlı online randevu).</summary>
     Task<T> InLockAsync<T>(string key, Func<Task<T>> body, CancellationToken ct);
 }
@@ -31,6 +34,7 @@ public interface ICredentialStore
 {
     Task<Credential?> FindByEmailAsync(string email, CancellationToken ct);
     Task SetAsync(Credential credential, CancellationToken ct);
+    Task<IReadOnlyDictionary<string, string>> EmailsAsync(IReadOnlyCollection<string> userIds, CancellationToken ct);
 }
 
 public interface IPasswordHasher

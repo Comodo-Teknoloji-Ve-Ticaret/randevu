@@ -93,6 +93,30 @@ api.MapPost("/batch", async (BatchRequest req, HttpContext http, BatchService ba
     return Results.Ok(new { applied = await batch.ApplyAsync(who, req, ct) });
 }).RequireAuthorization();
 
+// Davet linkiyle salon sahibinin hesabını açması (girişsiz)
+api.MapGet("/invite/{token}", (string token, AccountService s, CancellationToken ct) => s.InviteInfoAsync(token, ct));
+api.MapPost("/invite/{token}", async (string token, InviteAccept req, AccountService s, CancellationToken ct) =>
+{
+    var r = await s.AcceptInviteAsync(token, req, ct);
+    return Results.Ok(new { token = r.Token, user = r.User });
+}).RequireRateLimiting("booking");
+
+// Sahibin personeline giriş e-postası/şifresi tanımlaması
+api.MapPost("/users/{id}/credentials", async (string id, CredentialsRequest req, HttpContext http, AccountService s, CancellationToken ct) =>
+{
+    await s.SetCredentialsAsync(JwtTokenIssuer.Read(http.User) ?? throw new UnauthorizedException("Oturum geçersiz."), id, req, ct);
+    return Results.Ok(new { ok = true });
+}).RequireAuthorization();
+api.MapGet("/users/emails", (HttpContext http, AccountService s, CancellationToken ct) =>
+    s.EmailsAsync(JwtTokenIssuer.Read(http.User) ?? throw new UnauthorizedException("Oturum geçersiz."), ct)).RequireAuthorization();
+
+// Yalnız geliştirme/demo ortamında (Demo:AllowReset=true): tüm veriyi demo verisiyle değiştirir.
+api.MapPost("/dev/reset", async (System.Text.Json.Nodes.JsonObject db, IConfiguration config, AccountService s, CancellationToken ct) =>
+{
+    if (!config.GetValue("Demo:AllowReset", false)) return Results.NotFound();
+    return Results.Ok(new { imported = await s.ResetDemoAsync(db, ct) });
+});
+
 // Girişsiz online randevu (müşterinin telefonundan)
 var pub = api.MapGroup("/public/{slug}");
 pub.MapGet("", (string slug, PublicBookingService s, CancellationToken ct) => s.InfoAsync(slug, ct));
