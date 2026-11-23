@@ -729,6 +729,63 @@ const suites = {
       if (!page.url().includes('/takvim')) throw new Error('giriş yapılamadı: ' + page.url())
     })
   },
+  async adminUsers() {
+    await fresh('u_platform')
+    await go('/platform')
+    await step('Platform: tek paket (Tam Paket ₺2.000/ay) ve uzatma tutarı', async () => {
+      await expectText('Tam Paket'); await noText('Kurumsal'); await noText('Başlangıç')
+      await page.evaluate(() => [...document.querySelectorAll('tbody tr')].find((r) => r.textContent.includes('Studio Lara')).querySelector('.btn').click()); await sleep(300)
+      await clickText('90 gün', '.modal .pay-q'); await expectText('₺6.000')
+      await page.keyboard.press('Escape'); await sleep(200)
+    })
+    if (!API) return // giriş bilgileri yalnız sunucu modunda
+    const login = async (email, password) => (await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) })).status
+    const openUsers = async (salon) => {
+      await go('/platform')
+      await page.evaluate((n) => [...document.querySelectorAll('tbody tr')].find((r) => r.textContent.includes(n)).querySelector('[aria-label=Diğer]').click(), salon); await sleep(200)
+      await clickText('Kullanıcılar', '.menu button'); await sleep(800)
+    }
+    const userAction = async (name, label) => {
+      const ok = await page.evaluate((name, label) => {
+        const row = [...document.querySelectorAll('.drawer .list-item')].find((r) => r.querySelector('.t-strong')?.textContent.includes(name))
+        const btn = row && [...row.querySelectorAll('button')].find((b) => b.textContent.includes(label))
+        btn?.click(); return !!btn
+      }, name, label)
+      if (!ok) throw new Error(`${name}: "${label}" yok`)
+      await sleep(300)
+    }
+    await step('Yönetim: salon kullanıcılarının e-postaları görünür', async () => {
+      await openUsers('Studio Lara'); await expectText(demoEmail('u_t_lara_owner')); await expectText(demoEmail('u_t_lara_rec'))
+    })
+    await step('Yönetim: kullanıcının şifresini değiştir', async () => {
+      await userAction('Gamze', 'Şifre değiştir')
+      await fill('Yeni şifre', 'yonetimden-123'); await fill('Yeni şifre (tekrar)', 'yonetimden-123')
+      await clickText('Kaydet', '.modal button'); await sleep(600); await expectText('Şifre değiştirildi')
+      if ((await login(demoEmail('u_t_lara_rec'), 'yonetimden-123')) !== 200) throw new Error('yeni şifre geçmedi')
+    })
+    await step('Yönetim: kullanıcının e-postasını değiştir', async () => {
+      await userAction('Gamze', 'E-posta değiştir')
+      await fill('Yeni e-posta', 'gamze.yeni@salon.test'); await clickText('Kaydet', '.modal button'); await sleep(600)
+      await expectText('E-posta değiştirildi'); await expectText('gamze.yeni@salon.test')
+      if ((await login('gamze.yeni@salon.test', 'yonetimden-123')) !== 200) throw new Error('yeni e-posta geçmedi')
+    })
+    await step('Yönetim: salona kullanıcı aç', async () => {
+      await clickText('Kullanıcı aç', '.drawer-foot button')
+      await fill('Ad Soyad', 'Yeni Resepsiyon'); await setInput('.modal select', 'reception')
+      await fill('Giriş e-postası', 'yeni.resepsiyon@salon.test'); await fill('Şifre', 'ilk-sifre-123')
+      await clickText('Aç', '.modal .btn-primary'); await sleep(1200)
+      await expectText('Yeni Resepsiyon')
+      if ((await login('yeni.resepsiyon@salon.test', 'ilk-sifre-123')) !== 200) throw new Error('yeni kullanıcı giriş yapamadı')
+    })
+    await step('Yönetim: Comodo yöneticisi aç', async () => {
+      await go('/platform'); await clickText('Comodo yöneticileri', '.page-head button'); await sleep(600)
+      await clickText('Yönetici aç', '.drawer-foot button')
+      await fill('Ad Soyad', 'Ekip Arkadaşı'); await fill('Giriş e-postası', 'ekip@comodo.test'); await fill('Şifre', 'ekip-sifre-123')
+      await clickText('Aç', '.modal .btn-primary'); await sleep(1200)
+      const r = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'ekip@comodo.test', password: 'ekip-sifre-123' }) })
+      if ((await r.json()).user?.role !== 'platform') throw new Error('yönetici olarak giriş yapamadı')
+    })
+  },
   async booking() {
     await fresh('')
     await step('Online randevu: baştan sona', async () => {

@@ -6,6 +6,8 @@ namespace ComodoRandevuHazir.Application;
 
 public record InviteAccept(string Name, string Phone, string Email, string Password);
 public record CredentialsRequest(string Email, string Password);
+public record EmailRequest(string Email);
+public record PasswordRequest(string Password);
 
 /// <summary>Demo hesapları: e-posta kullanıcı kimliğinden türetilir (u_t_lara_owner → lara.owner@demo…), şifre ortak.</summary>
 public static class DemoAccounts
@@ -60,12 +62,39 @@ public class AccountService(IRecordStore records, ICredentialStore credentials, 
         }, ct);
     }
 
-    public async Task SetCredentialsAsync(Identity who, string userId, CredentialsRequest req, CancellationToken ct)
+    /// <summary>Comodo yöneticisi her kullanıcıyı; salon sahibi yalnız kendi salonunun (platform dışı) kullanıcılarını yönetir.</summary>
+    private async Task AuthorizeUserAdminAsync(Identity who, string userId, CancellationToken ct)
     {
         var target = await records.GetAsync("users", userId, ct) ?? throw new NotFoundException("Kullanıcı bulunamadı.");
         var role = Str(JsonNode.Parse(target.Data)!.AsObject(), "role");
         var allowed = who.Role == "platform" || Permissions.Can(who.Role, "settings") && target.TenantId == who.TenantId && role != "platform";
         if (!allowed) throw new ForbiddenException("Bu işlem için yetkiniz yok.");
+    }
+
+    private async Task<Credential> ExistingLoginAsync(string userId, CancellationToken ct) =>
+        await credentials.FindByUserAsync(userId, ct)
+            ?? throw new ValidationException("Bu kullanıcının giriş bilgisi yok; önce e-posta ve şifre belirleyin.");
+
+    public async Task ChangeEmailAsync(Identity who, string userId, EmailRequest req, CancellationToken ct)
+    {
+        await AuthorizeUserAdminAsync(who, userId, ct);
+        var email = ValidEmail(req.Email);
+        var cred = await ExistingLoginAsync(userId, ct);
+        await EnsureEmailFreeAsync(email, userId, ct);
+        await credentials.SetAsync(cred with { Email = email }, ct);
+    }
+
+    public async Task ChangePasswordAsync(Identity who, string userId, PasswordRequest req, CancellationToken ct)
+    {
+        await AuthorizeUserAdminAsync(who, userId, ct);
+        ValidPassword(req.Password);
+        var cred = await ExistingLoginAsync(userId, ct);
+        await credentials.SetAsync(cred with { PasswordHash = hasher.Hash(req.Password) }, ct);
+    }
+
+    public async Task SetCredentialsAsync(Identity who, string userId, CredentialsRequest req, CancellationToken ct)
+    {
+        await AuthorizeUserAdminAsync(who, userId, ct);
         var email = ValidEmail(req.Email);
         ValidPassword(req.Password);
         await EnsureEmailFreeAsync(email, userId, ct);

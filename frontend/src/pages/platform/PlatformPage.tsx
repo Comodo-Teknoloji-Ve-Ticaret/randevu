@@ -1,10 +1,11 @@
 import {
-  AlarmClock, Building2, CalendarPlus, Copy, ExternalLink, Link2, MessageCircle, MoreHorizontal, Pause, Play, Plus, RefreshCw, Scissors, ShieldAlert, Wallet,
+  AlarmClock, Building2, CalendarPlus, Copy, ExternalLink, Link2, MessageCircle, MoreHorizontal, Pause, Play, Plus, RefreshCw, Scissors, ShieldAlert, ShieldCheck, Users, Wallet,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { platformService, slugify } from '../../application/platformService'
 import { BUSINESS_TYPES, businessTypeLabel, licenseStatus, type LicenseStatus } from '../../domain/license'
 import { formatTRY } from '../../domain/money'
+import { licenseFee, PLAN } from '../../domain/plan'
 import { ticketTotals } from '../../domain/ticket'
 import { addDays, formatDate, todayIstanbul } from '../../domain/time'
 import type { BusinessType, Tenant } from '../../domain/types'
@@ -12,10 +13,9 @@ import { useDbSnapshot, useStore } from '../../infrastructure'
 import { Badge, Button, cx, Drawer, Field, Input, Kpi, Modal, PageHeader, Popover, Segmented, Select, useConfirm, useToast } from '../../ui'
 import { bookingUrl } from '../settings/SettingsPage'
 import '../settings/settings.css'
+import { UsersDrawer } from './UsersDrawer'
 import './platform.css'
 
-const PLAN_LABEL = { baslangic: 'Başlangıç', pro: 'Pro', kurumsal: 'Kurumsal' }
-const PLAN_PRICE = { baslangic: 79900, pro: 149900, kurumsal: 299900 }
 type LicFilter = 'all' | 'expiring' | 'expired'
 
 export const inviteUrl = (token: string) => `${location.origin}${location.pathname}#/davet/${token}`
@@ -43,6 +43,8 @@ export default function PlatformPage() {
   const [creating, setCreating] = useState(false)
   const [invite, setInvite] = useState<Tenant | null>(null)
   const [extend, setExtend] = useState<Tenant | null>(null)
+  /** undefined: kapalı · null: Comodo yöneticileri · id: o işletmenin kullanıcıları */
+  const [usersOf, setUsersOf] = useState<string | null | undefined>(undefined)
   const [type, setType] = useState<BusinessType | 'all'>('all')
   const [lic, setLic] = useState<LicFilter>('all')
   const today = todayIstanbul()
@@ -65,18 +67,18 @@ export default function PlatformPage() {
   const active = rows.filter((r) => r.t.status === 'active' && r.ls.state !== 'locked')
   const expiring = rows.filter((r) => r.ls.state === 'expiring').length
   const expired = rows.filter((r) => r.ls.state === 'grace' || r.ls.state === 'locked').length
-  const mrr = active.reduce((s, r) => s + PLAN_PRICE[r.t.plan], 0)
+  const mrr = active.length * PLAN.monthly
   const typeCounts = new Map<BusinessType, number>()
   for (const r of rows) typeCounts.set(r.t.businessType, (typeCounts.get(r.t.businessType) ?? 0) + 1)
 
   return (
     <div className="page">
-      <PageHeader title="İşletmeler" subtitle="Comodo platform yönetimi · lisans ve erişim" actions={<Button variant="primary" icon={Plus} onClick={() => setCreating(true)}>Yeni işletme</Button>} />
+      <PageHeader title="İşletmeler" subtitle="Comodo platform yönetimi · lisans ve erişim" actions={<><Button icon={ShieldCheck} onClick={() => setUsersOf(null)}>Comodo yöneticileri</Button><Button variant="primary" icon={Plus} onClick={() => setCreating(true)}>Yeni işletme</Button></>} />
       <div className="kpis" style={{ marginBottom: 16 }}>
         <Kpi icon={Building2} label="Aktif işletme" value={`${active.length} / ${rows.length}`} />
         <Kpi icon={AlarmClock} label="7 gün içinde bitecek" value={expiring} tone="var(--warning)" />
         <Kpi icon={ShieldAlert} label="Süresi dolmuş" value={expired} tone="var(--danger)" />
-        <Kpi icon={Wallet} label="Aylık abonelik geliri (örnek)" value={formatTRY(mrr)} tone="var(--success)" />
+        <Kpi icon={Wallet} label={`Aylık gelir · ${PLAN.name} ${formatTRY(PLAN.monthly)}`} value={formatTRY(mrr)} tone="var(--success)" />
       </div>
 
       <div className="plat-filters">
@@ -115,7 +117,7 @@ export default function PlatformPage() {
                       </div>
                     </td>
                     <td><LicenseCell ls={ls} days={t.license.days} /></td>
-                    <td><Badge tone="accent">{PLAN_LABEL[t.plan]}</Badge></td>
+                    <td><Badge tone="accent">{PLAN.name}</Badge></td>
                     <td className="r num">{appts}</td>
                     <td className="r num t-strong">{formatTRY(Math.round(revenue / 100) * 100)}</td>
                     <td>
@@ -128,6 +130,7 @@ export default function PlatformPage() {
                         <Popover trigger={(open) => <button className="icon-btn" aria-label="Diğer" onClick={open}><MoreHorizontal /></button>}>
                           {(close) => (
                             <>
+                              <button onClick={() => { close(); setUsersOf(t.id) }}><Users /> Kullanıcılar</button>
                               <button onClick={() => { close(); window.open(bookingUrl(t.slug), '_blank') }}><ExternalLink /> Online randevu sayfası</button>
                               {t.status === 'active' ? (
                                 <button onClick={async () => {
@@ -154,6 +157,7 @@ export default function PlatformPage() {
       {creating && <NewBusiness onClose={() => setCreating(false)} onCreated={(t) => { setCreating(false); setInvite(t) }} />}
       {invite && <InviteModal tenantId={invite.id} onClose={() => setInvite(null)} />}
       {extend && <ExtendModal tenantId={extend.id} onClose={() => setExtend(null)} />}
+      {usersOf !== undefined && <UsersDrawer tenantId={usersOf} onClose={() => setUsersOf(undefined)} />}
     </div>
   )
 }
@@ -213,13 +217,14 @@ function ExtendModal({ tenantId, onClose }: { tenantId: string; onClose: () => v
       <Field label="Süre">
         <div className="ext-opts">
           {[30, 90, 180, 365].map((d) => (
-            <button key={d} className={cx('pay-q', days === d && 'on')} onClick={() => setDays(d)}><b>{d === 365 ? '1 yıl' : `${d} gün`}</b><span>{d === 30 ? 'Aylık' : d === 90 ? '3 ay' : d === 180 ? '6 ay' : 'Yıllık'}</span></button>
+            <button key={d} className={cx('pay-q', days === d && 'on')} onClick={() => setDays(d)}><b>{d === 365 ? '1 yıl' : `${d} gün`}</b><span>{formatTRY(licenseFee(d))}</span></button>
           ))}
         </div>
       </Field>
       <div className="summary-box" style={{ background: 'var(--surface-2)', borderRadius: 14, padding: '12px 14px' }}>
         <div className="sum-row"><span className="muted">Mevcut bitiş</span><span>{formatDate(ls.end, { year: true })}</span></div>
         <div className="sum-row"><span className="muted">Yeni bitiş</span><b>{formatDate(newEnd, { year: true })}</b></div>
+        <div className="sum-row"><span className="muted">Tutar ({PLAN.name})</span><b>{formatTRY(licenseFee(days))}</b></div>
         {ls.remaining < 0 && <p className="t-small muted" style={{ marginTop: 6 }}>Süre dolduğu için yeni dönem bugünden başlar.</p>}
       </div>
     </Modal>
@@ -229,7 +234,7 @@ function ExtendModal({ tenantId, onClose }: { tenantId: string; onClose: () => v
 function NewBusiness({ onClose, onCreated }: { onClose: () => void; onCreated: (t: Tenant) => void }) {
   const store = useStore()
   const toast = useToast()
-  const [f, setF] = useState({ name: '', slug: '', ownerName: '', branchName: 'Merkez', plan: 'pro' as Tenant['plan'], businessType: 'kuafor' as BusinessType, licenseDays: 30 })
+  const [f, setF] = useState({ name: '', slug: '', ownerName: '', branchName: 'Merkez', businessType: 'kuafor' as BusinessType, licenseDays: 30 })
   const [err, setErr] = useState<string | null>(null)
   const slug = f.slug || slugify(f.name)
   return (
@@ -260,10 +265,8 @@ function NewBusiness({ onClose, onCreated }: { onClose: () => void; onCreated: (
             {[[14, '14 gün (deneme)'], [30, '30 gün'], [90, '90 gün'], [180, '180 gün'], [365, '1 yıl']].map(([d, l]) => <option key={d} value={d}>{l}</option>)}
           </Select>
         </Field>
-        <Field label="Paket">
-          <Select value={f.plan} onChange={(e) => setF({ ...f, plan: e.target.value as Tenant['plan'] })}>
-            {(Object.keys(PLAN_LABEL) as Tenant['plan'][]).map((p) => <option key={p} value={p}>{PLAN_LABEL[p]} · {formatTRY(PLAN_PRICE[p])}/ay</option>)}
-          </Select>
+        <Field label="Paket" hint={f.licenseDays < 30 ? 'Deneme süresi ücretsiz' : `Lisans tutarı: ${formatTRY(licenseFee(f.licenseDays))}`}>
+          <div className="row" style={{ height: 40 }}><Badge tone="accent">{PLAN.name}</Badge><span className="t-small muted" style={{ marginLeft: 8 }}>{formatTRY(PLAN.monthly)}/ay</span></div>
         </Field>
       </div>
       <p className="t-small muted">Hizmet kategorileri {businessTypeLabel(f.businessType).toLocaleLowerCase('tr-TR')} için hazır gelir; işletme sahibi hizmet, personel ve fiyatları kendi panelinden ekler.</p>

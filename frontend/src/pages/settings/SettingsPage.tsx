@@ -4,6 +4,8 @@ import { newId } from '../../application/db'
 import { platformService, slugify } from '../../application/platformService'
 import { ROLE_LABEL } from '../../app/permissions'
 import { useSession } from '../../app/session'
+import { formatTRY } from '../../domain/money'
+import { PLAN } from '../../domain/plan'
 import { formatPhone } from '../../domain/phone'
 import type { Branch, Role, User } from '../../domain/types'
 import { httpStore, useRepos, useStore } from '../../infrastructure'
@@ -24,7 +26,6 @@ const SECTIONS: { key: Section; label: string; icon: typeof Building2 }[] = [
   { key: 'theme', label: 'Görünüm', icon: Sun },
 ]
 const BRAND_COLORS = ['#6c5ce7', '#12a37b', '#0984e3', '#e17055', '#e84393', '#2d3436', '#b8860b', '#00b894']
-const PLAN_LABEL = { baslangic: 'Başlangıç', pro: 'Pro', kurumsal: 'Kurumsal' }
 
 export const bookingUrl = (slug: string) => `${location.origin}${location.pathname}#/r/${slug}`
 
@@ -73,7 +74,7 @@ function SalonSection() {
       <h3 className="set-h">Salon bilgileri</h3>
       <div className="grid-2">
         <Field label="Salon adı"><Input value={name} onChange={(e) => setName(e.target.value)} /></Field>
-        <Field label="Paket"><div className="row" style={{ height: 40 }}><Badge tone="accent">{PLAN_LABEL[tenant.plan]}</Badge><span className="t-small muted">Değişiklik için Comodo ile iletişime geçin</span></div></Field>
+        <Field label="Paket"><div className="row" style={{ height: 40 }}><Badge tone="accent">{PLAN.name}</Badge><span className="t-small muted" style={{ marginLeft: 8 }}>{formatTRY(PLAN.monthly)}/ay · tüm özellikler dahil</span></div></Field>
       </div>
       <Field label="Marka rengi" hint="Logo ve online randevu sayfasında kullanılır.">
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>

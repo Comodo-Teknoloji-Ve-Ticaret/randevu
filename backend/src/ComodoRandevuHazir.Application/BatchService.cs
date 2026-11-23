@@ -60,10 +60,10 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
         {
             if (!existing.TryGetValue(key, out var old)) continue; // zaten yok: silme idempotent
             var oldData = JsonNode.Parse(old.Data)!.AsObject();
+            if (key.Collection == "users" && key.Id == who.UserId) throw new ForbiddenException("Kendi hesabınızı silemezsiniz.");
             if (!platform)
             {
                 if (old.TenantId != who.TenantId || key.Collection == "tenants") throw new ForbiddenException(NoAccess);
-                if (key.Collection == "users" && key.Id == who.UserId) throw new ForbiddenException("Kendi hesabınızı silemezsiniz.");
                 Authorize(who, myStaffId, key.Collection, null, oldData);
             }
             pendingDeletes.Add(new PendingDelete(key, old.TenantId, oldData));
@@ -104,9 +104,15 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
         return id;
     }
 
-    private static string PlatformTenant(string collection, string id, JsonObject data)
+    private static string? PlatformTenant(string collection, string id, JsonObject data)
     {
         if (Collections.ScopedBySelf(collection)) return id;
+        // Comodo yöneticisi hesabı hiçbir salona bağlı değildir.
+        if (collection == "users" && data["role"] is JsonValue r && r.TryGetValue<string>(out var role) && role == "platform")
+        {
+            data["tenantId"] = null;
+            return null;
+        }
         return data["tenantId"] is JsonValue v && v.TryGetValue<string>(out var t) && t.Length > 0 ? t
             : throw new ValidationException($"{collection}/{id}: tenantId alanı gerekli.");
     }

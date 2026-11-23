@@ -27,7 +27,7 @@ const STARTER_CATS: Record<BusinessType, [string, CategoryKey][]> = {
   diger: [['Hizmetler', 'diger']],
 }
 
-export interface NewSalon { name: string; slug: string; ownerName: string; branchName: string; plan: Tenant['plan']; businessType?: BusinessType; licenseDays?: number }
+export interface NewSalon { name: string; slug: string; ownerName: string; branchName: string; plan?: Tenant['plan']; businessType?: BusinessType; licenseDays?: number }
 
 export const newToken = () => Array.from({ length: 2 }, () => Math.random().toString(36).slice(2, 12).padEnd(10, '0')).join('')
 
@@ -51,7 +51,7 @@ export function platformService(store: Store, clock: Clock = istanbulClock) {
     const today = clock().date
     const type = input.businessType ?? 'kuafor'
     const tenant: Tenant = {
-      id: tid, name: input.name.trim(), slug, logoColor: '#6c5ce7', plan: input.plan, status: 'active', createdAt: today,
+      id: tid, name: input.name.trim(), slug, logoColor: '#6c5ce7', plan: 'tam', status: 'active', createdAt: today,
       onlineBooking: { enabled: true, requireApproval: true, maxDaysAhead: 30, minLeadMinutes: 120 },
       businessType: type, license: { start: today, days: input.licenseDays ?? 30 }, invite: { token: newToken(), createdAt: today },
       accounts: [{ id: newId('acc_'), name: 'POS cihazı', kind: 'pos', active: true }, { id: newId('acc_'), name: 'Banka hesabı', kind: 'bank', active: true }],

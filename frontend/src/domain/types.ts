@@ -25,7 +25,8 @@ export interface Tenant {
   name: string
   slug: string
   logoColor: string
-  plan: 'baslangic' | 'pro' | 'kurumsal'
+  /** Tek paket: 'tam'. Eski kayıtlardaki değerler de Tam Paket sayılır. */
+  plan: 'tam' | 'baslangic' | 'pro' | 'kurumsal'
   status: 'active' | 'suspended'
   onlineBooking: OnlineBookingSettings
   createdAt: string

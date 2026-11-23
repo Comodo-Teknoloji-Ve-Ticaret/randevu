@@ -143,6 +143,16 @@ api.MapPost("/users/{id}/credentials", async (string id, CredentialsRequest req,
     await s.SetCredentialsAsync(JwtTokenIssuer.Read(http.User) ?? throw new UnauthorizedException("Oturum geçersiz."), id, req, ct);
     return Results.Ok(new { ok = true });
 }).RequireAuthorization();
+api.MapPost("/users/{id}/email", async (string id, EmailRequest req, HttpContext http, AccountService s, CancellationToken ct) =>
+{
+    await s.ChangeEmailAsync(JwtTokenIssuer.Read(http.User) ?? throw new UnauthorizedException("Oturum geçersiz."), id, req, ct);
+    return Results.Ok(new { ok = true });
+}).RequireAuthorization();
+api.MapPost("/users/{id}/password", async (string id, PasswordRequest req, HttpContext http, AccountService s, CancellationToken ct) =>
+{
+    await s.ChangePasswordAsync(JwtTokenIssuer.Read(http.User) ?? throw new UnauthorizedException("Oturum geçersiz."), id, req, ct);
+    return Results.Ok(new { ok = true });
+}).RequireAuthorization();
 api.MapGet("/users/emails", (HttpContext http, AccountService s, CancellationToken ct) =>
     s.EmailsAsync(JwtTokenIssuer.Read(http.User) ?? throw new UnauthorizedException("Oturum geçersiz."), ct)).RequireAuthorization();
 
