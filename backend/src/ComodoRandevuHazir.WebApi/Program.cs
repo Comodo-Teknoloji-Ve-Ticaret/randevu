@@ -73,6 +73,12 @@ api.MapGet("/sync", async (HttpContext http, SyncService sync, CancellationToken
     return Results.Content(await sync.SnapshotAsync(who, ct), "application/json; charset=utf-8");
 }).RequireAuthorization();
 
+api.MapPost("/batch", async (BatchRequest req, HttpContext http, BatchService batch, CancellationToken ct) =>
+{
+    var who = JwtTokenIssuer.Read(http.User) ?? throw new UnauthorizedException("Oturum geçersiz.");
+    return Results.Ok(new { applied = await batch.ApplyAsync(who, req, ct) });
+}).RequireAuthorization();
+
 app.Run();
 
 public partial class Program;

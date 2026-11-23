@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ComodoRandevuHazir.Infrastructure.Persistence;
 
-public class RecordStore(AppDbContext db, TimeProvider time) : IRecordStore
+public partial class RecordStore(AppDbContext db, TimeProvider time) : IRecordStore
 {
     public async Task<IReadOnlyList<RecordRow>> ListAsync(string? tenantId, CancellationToken ct) =>
         await db.Records.AsNoTracking()
@@ -32,6 +32,35 @@ public class RecordStore(AppDbContext db, TimeProvider time) : IRecordStore
             }
         }
         await db.SaveChangesAsync(ct);
+    }
+}
+
+public partial class RecordStore
+{
+    public async Task<IReadOnlyList<RecordRow>> GetManyAsync(IReadOnlyCollection<RecordKey> keys, CancellationToken ct)
+    {
+        var result = new List<RecordRow>();
+        foreach (var group in keys.GroupBy(k => k.Collection))
+        {
+            var ids = group.Select(k => k.Id).Distinct().ToList();
+            result.AddRange(await db.Records.AsNoTracking()
+                .Where(r => r.Collection == group.Key && ids.Contains(r.Id))
+                .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
+                .ToListAsync(ct));
+        }
+        return result;
+    }
+
+    public async Task ApplyAsync(IReadOnlyCollection<RecordRow> upserts, IReadOnlyCollection<RecordKey> deletes, CancellationToken ct)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        if (upserts.Count > 0) await UpsertManyAsync(upserts, ct);
+        foreach (var group in deletes.GroupBy(k => k.Collection))
+        {
+            var ids = group.Select(k => k.Id).Distinct().ToList();
+            await db.Records.Where(r => r.Collection == group.Key && ids.Contains(r.Id)).ExecuteDeleteAsync(ct);
+        }
+        await tx.CommitAsync(ct);
     }
 }
 

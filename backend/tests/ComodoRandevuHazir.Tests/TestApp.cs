@@ -72,7 +72,7 @@ public static class Fixture
     {
       "version": 3,
       "tenants": [
-        { "id": "t_a", "name": "Salon A", "slug": "salon-a", "status": "active", "license": { "start": "{{Today}}", "days": 30 } },
+        { "id": "t_a", "name": "Salon A", "slug": "salon-a", "status": "active", "license": { "start": "{{Today}}", "days": 30 }, "brands": [], "plan": "pro" },
         { "id": "t_b", "name": "Salon B", "slug": "salon-b", "status": "active", "license": { "start": "{{Today}}", "days": 30 } },
         { "id": "t_old", "name": "Eski Salon", "slug": "eski", "status": "active", "license": { "start": "{{DaysAgo(40)}}", "days": 30 } },
         { "id": "t_off", "name": "Askıda", "slug": "askida", "status": "suspended", "license": { "start": "{{Today}}", "days": 30 } }
@@ -86,8 +86,16 @@ public static class Fixture
         { "id": "u_a_owner", "tenantId": "t_a", "name": "Ayşe", "role": "owner", "branchIds": ["b_a"] },
         { "id": "u_b_owner", "tenantId": "t_b", "name": "Berk", "role": "owner", "branchIds": ["b_b"] },
         { "id": "u_old_owner", "tenantId": "t_old", "name": "Eski", "role": "owner", "branchIds": [] },
-        { "id": "u_off_owner", "tenantId": "t_off", "name": "Askı", "role": "owner", "branchIds": [] }
+        { "id": "u_off_owner", "tenantId": "t_off", "name": "Askı", "role": "owner", "branchIds": [] },
+        { "id": "u_a_rec", "tenantId": "t_a", "name": "Resepsiyon", "role": "reception", "branchIds": ["b_a"] },
+        { "id": "u_a_staff", "tenantId": "t_a", "name": "Personel", "role": "staff", "staffId": "s_a1", "branchIds": ["b_a"] }
       ],
+      "staff": [
+        { "id": "s_a1", "tenantId": "t_a", "branchId": "b_a", "name": "Sena", "serviceIds": [], "serviceCommission": 30 },
+        { "id": "s_a2", "tenantId": "t_a", "branchId": "b_a", "name": "Deniz", "serviceIds": [], "serviceCommission": 30 }
+      ],
+      "categories": [ { "id": "c_a", "tenantId": "t_a", "name": "Kesim", "color": "kesim", "order": 0 } ],
+      "services": [ { "id": "sv_a", "tenantId": "t_a", "categoryId": "c_a", "name": "Kesim", "duration": 30, "price": 50000 } ],
       "customers": [
         { "id": "m_a1", "tenantId": "t_a", "name": "Elif", "phone": "5321112233" },
         { "id": "m_b1", "tenantId": "t_b", "name": "Burak", "phone": "5329998877" }
@@ -102,5 +110,7 @@ public static class Fixture
         ["u_b_owner"] = ("berk@test.local", TestApp.Password),
         ["u_old_owner"] = ("eski@test.local", TestApp.Password),
         ["u_off_owner"] = ("aski@test.local", TestApp.Password),
+        ["u_a_rec"] = ("resepsiyon@test.local", TestApp.Password),
+        ["u_a_staff"] = ("personel@test.local", TestApp.Password),
     };
 }

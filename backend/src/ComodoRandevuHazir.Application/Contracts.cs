@@ -16,6 +16,9 @@ public interface IRecordStore
     Task<IReadOnlyList<RecordRow>> ListAsync(string? tenantId, CancellationToken ct);
     Task<RecordRow?> GetAsync(string collection, string id, CancellationToken ct);
     Task UpsertManyAsync(IReadOnlyCollection<RecordRow> rows, CancellationToken ct);
+    Task<IReadOnlyList<RecordRow>> GetManyAsync(IReadOnlyCollection<RecordKey> keys, CancellationToken ct);
+    /// <summary>Tümü tek işlemde uygulanır; biri başarısızsa hiçbiri yazılmaz.</summary>
+    Task ApplyAsync(IReadOnlyCollection<RecordRow> upserts, IReadOnlyCollection<RecordKey> deletes, CancellationToken ct);
 }
 
 public interface ICredentialStore
@@ -44,3 +47,8 @@ public class ValidationException(string message) : Exception(message);
 public class UnauthorizedException(string message) : Exception(message);
 public class ForbiddenException(string message) : Exception(message);
 public class NotFoundException(string message) : Exception(message);
+
+public record BatchUpsert(string Collection, System.Text.Json.Nodes.JsonObject Data);
+public record BatchDelete(string Collection, string Id);
+public record BatchRequest(List<BatchUpsert>? Upserts, List<BatchDelete>? Deletes);
+public record RecordKey(string Collection, string Id);
