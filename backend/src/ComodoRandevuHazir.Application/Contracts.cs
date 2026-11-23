@@ -35,6 +35,24 @@ public interface ICredentialStore
     Task<Credential?> FindByEmailAsync(string email, CancellationToken ct);
     Task SetAsync(Credential credential, CancellationToken ct);
     Task<IReadOnlyDictionary<string, string>> EmailsAsync(IReadOnlyCollection<string> userIds, CancellationToken ct);
+    Task<Credential?> FindByUserAsync(string userId, CancellationToken ct);
+}
+
+public record PasswordReset(string UserId, string CodeHash, DateTimeOffset ExpiresAt, int Attempts);
+
+public interface IPasswordResetStore
+{
+    Task<PasswordReset?> GetAsync(string userId, CancellationToken ct);
+    Task SetAsync(PasswordReset reset, CancellationToken ct);
+    Task DeleteAsync(string userId, CancellationToken ct);
+}
+
+public record EmailMessage(string To, string Subject, string Body);
+
+/// <summary>E-posta gönderimi. Smtp:Host ayarlı değilse simülasyon (gönderilmez, günlüğe yazılır).</summary>
+public interface IEmailSender
+{
+    Task SendAsync(EmailMessage message, CancellationToken ct);
 }
 
 public interface IPasswordHasher
@@ -51,6 +69,7 @@ public interface ITokenIssuer
 public interface IClock
 {
     DateOnly Today { get; }
+    DateTimeOffset Now { get; }
     /// <summary>İstanbul saatiyle gün içi dakika.</summary>
     int NowMinutes { get; }
 }

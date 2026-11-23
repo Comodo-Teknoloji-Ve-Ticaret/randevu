@@ -102,6 +102,7 @@ public partial class RecordStore
 
     public async Task ClearAllAsync(CancellationToken ct)
     {
+        await db.PasswordResets.ExecuteDeleteAsync(ct);
         await db.Records.ExecuteDeleteAsync(ct);
         await db.Credentials.ExecuteDeleteAsync(ct);
     }
@@ -122,6 +123,10 @@ public class CredentialStore(AppDbContext db) : ICredentialStore
         await db.Credentials.AsNoTracking().Where(c => c.Email == email)
             .Select(c => new Credential(c.UserId, c.Email, c.PasswordHash)).FirstOrDefaultAsync(ct);
 
+    public async Task<Credential?> FindByUserAsync(string userId, CancellationToken ct) =>
+        await db.Credentials.AsNoTracking().Where(c => c.UserId == userId)
+            .Select(c => new Credential(c.UserId, c.Email, c.PasswordHash)).FirstOrDefaultAsync(ct);
+
     public async Task<IReadOnlyDictionary<string, string>> EmailsAsync(IReadOnlyCollection<string> userIds, CancellationToken ct) =>
         await db.Credentials.AsNoTracking().Where(c => userIds.Contains(c.UserId)).ToDictionaryAsync(c => c.UserId, c => c.Email, ct);
 
@@ -132,4 +137,21 @@ public class CredentialStore(AppDbContext db) : ICredentialStore
         else { e.Email = c.Email; e.PasswordHash = c.PasswordHash; }
         await db.SaveChangesAsync(ct);
     }
+}
+
+public class PasswordResetStore(AppDbContext db) : IPasswordResetStore
+{
+    public async Task<PasswordReset?> GetAsync(string userId, CancellationToken ct) =>
+        await db.PasswordResets.AsNoTracking().Where(r => r.UserId == userId)
+            .Select(r => new PasswordReset(r.UserId, r.CodeHash, r.ExpiresAt, r.Attempts)).FirstOrDefaultAsync(ct);
+
+    public async Task SetAsync(PasswordReset r, CancellationToken ct)
+    {
+        var e = await db.PasswordResets.FindAsync([r.UserId], ct);
+        if (e is null) db.PasswordResets.Add(new PasswordResetEntity { UserId = r.UserId, CodeHash = r.CodeHash, ExpiresAt = r.ExpiresAt, Attempts = r.Attempts });
+        else { e.CodeHash = r.CodeHash; e.ExpiresAt = r.ExpiresAt; e.Attempts = r.Attempts; }
+        await db.SaveChangesAsync(ct);
+    }
+
+    public Task DeleteAsync(string userId, CancellationToken ct) => db.PasswordResets.Where(r => r.UserId == userId).ExecuteDeleteAsync(ct);
 }

@@ -20,10 +20,19 @@ public class CredentialEntity
     public required string PasswordHash { get; set; }
 }
 
+public class PasswordResetEntity
+{
+    public required string UserId { get; set; }
+    public required string CodeHash { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public int Attempts { get; set; }
+}
+
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<RecordEntity> Records => Set<RecordEntity>();
     public DbSet<CredentialEntity> Credentials => Set<CredentialEntity>();
+    public DbSet<PasswordResetEntity> PasswordResets => Set<PasswordResetEntity>();
 
     public const string RecordSequence = "records_seq";
 
@@ -50,6 +59,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Email).HasColumnName("email").HasMaxLength(254);
             e.Property(x => x.PasswordHash).HasColumnName("password_hash");
             e.HasIndex(x => x.Email).IsUnique();
+        });
+        b.Entity<PasswordResetEntity>(e =>
+        {
+            e.ToTable("password_resets");
+            e.HasKey(x => x.UserId);
+            e.Property(x => x.UserId).HasColumnName("user_id").HasMaxLength(80);
+            e.Property(x => x.CodeHash).HasColumnName("code_hash");
+            e.Property(x => x.ExpiresAt).HasColumnName("expires_at");
+            e.Property(x => x.Attempts).HasColumnName("attempts");
         });
     }
 }

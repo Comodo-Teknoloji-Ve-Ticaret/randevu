@@ -50,6 +50,31 @@ namespace ComodoRandevuHazir.Infrastructure.Persistence.Migrations
                     b.ToTable("credentials", (string)null);
                 });
 
+            modelBuilder.Entity("ComodoRandevuHazir.Infrastructure.Persistence.PasswordResetEntity", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("password_resets", (string)null);
+                });
+
             modelBuilder.Entity("ComodoRandevuHazir.Infrastructure.Persistence.RecordEntity", b =>
                 {
                     b.Property<string>("Collection")

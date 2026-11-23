@@ -41,6 +41,10 @@ builder.Services.AddOptions<RateLimiterOptions>().Configure<IConfiguration>((o, 
     o.AddPolicy("booking", http => RateLimitPartition.GetFixedWindowLimiter(
         http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = config.GetValue("RateLimit:BookPerMinute", 20), Window = TimeSpan.FromMinutes(1) }));
+    // Giriş / şifre sıfırlama: kaba kuvvet denemelerine karşı istemci başına dakikada N istek (varsayılan 10).
+    o.AddPolicy("auth", http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = config.GetValue("RateLimit:AuthPerMinute", 10), Window = TimeSpan.FromMinutes(1) }));
 });
 
 var app = builder.Build();
@@ -94,7 +98,24 @@ api.MapPost("/auth/login", async (LoginRequest req, AuthService auth, Cancellati
 {
     var r = await auth.LoginAsync(req, ct);
     return Results.Ok(new { token = r.Token, user = r.User });
-});
+}).RequireRateLimiting("auth");
+
+// Şifre: kendi şifresini değiştirme; unutulan şifre için e-postayla kod
+api.MapPost("/me/password", async (ChangePasswordRequest req, HttpContext http, PasswordService s, CancellationToken ct) =>
+{
+    await s.ChangeAsync(JwtTokenIssuer.Read(http.User) ?? throw new UnauthorizedException("Oturum geçersiz."), req, ct);
+    return Results.Ok(new { ok = true });
+}).RequireAuthorization();
+api.MapPost("/auth/forgot", async (ForgotPasswordRequest req, PasswordService s, CancellationToken ct) =>
+{
+    await s.ForgotAsync(req, ct);
+    return Results.Ok(new { ok = true });
+}).RequireRateLimiting("auth");
+api.MapPost("/auth/reset", async (ResetPasswordRequest req, PasswordService s, CancellationToken ct) =>
+{
+    await s.ResetAsync(req, ct);
+    return Results.Ok(new { ok = true });
+}).RequireRateLimiting("auth");
 
 api.MapGet("/sync", async (HttpContext http, SyncService sync, CancellationToken ct) =>
 {

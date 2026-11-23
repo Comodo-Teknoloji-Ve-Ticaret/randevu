@@ -70,5 +70,6 @@ public class IstanbulClock(TimeProvider time) : IClock
 {
     private DateTime Now => time.GetUtcNow().UtcDateTime.AddHours(3);
     public DateOnly Today => DateOnly.FromDateTime(Now);
+    DateTimeOffset IClock.Now => time.GetUtcNow();
     public int NowMinutes => Now.Hour * 60 + Now.Minute;
 }

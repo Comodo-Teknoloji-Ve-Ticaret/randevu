@@ -13,5 +13,6 @@ public static class DependencyInjection
         .AddScoped<MessageRules>()
         .AddScoped<BatchService>()
         .AddScoped<PublicBookingService>()
-        .AddScoped<AccountService>();
+        .AddScoped<AccountService>()
+        .AddScoped<PasswordService>();
 }

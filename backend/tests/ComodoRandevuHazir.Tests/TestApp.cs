@@ -35,6 +35,7 @@ public class TestApp : WebApplicationFactory<Program>, IAsyncLifetime
         {
             ["ConnectionStrings:Db"] = ConnectionString,
             ["Jwt:Key"] = "test-anahtari-test-anahtari-test-anahtari-0123456789",
+            ["RateLimit:AuthPerMinute"] = "10000", // testler aynı istemciden çok giriş yapar
         };
         foreach (var (k, v) in ExtraSettings) settings[k] = v;
         builder.ConfigureAppConfiguration(c => c.AddInMemoryCollection(settings));

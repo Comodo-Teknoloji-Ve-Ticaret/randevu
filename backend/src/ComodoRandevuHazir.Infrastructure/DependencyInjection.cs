@@ -22,5 +22,10 @@ public static class DependencyInjection
         .AddScoped<IRecordStore, RecordStore>()
         .AddScoped<ICredentialStore, CredentialStore>()
         // Gerçek sağlayıcı (Netgsm/İleti Merkezi) hesabı açıldığında Sms:Provider ayarıyla seçilecek.
-        .AddSingleton<ISmsSender, SimulatedSmsSender>();
+        .AddSingleton<ISmsSender, SimulatedSmsSender>()
+        .AddScoped<IPasswordResetStore, PasswordResetStore>()
+        .AddSingleton<SimulatedEmailSender>()
+        .AddSingleton<IEmailSender>(sp => sp.GetRequiredService<IConfiguration>().GetSection("Smtp").Get<SmtpOptions>() is { Host.Length: > 0 } smtp
+            ? new SmtpEmailSender(smtp)
+            : sp.GetRequiredService<SimulatedEmailSender>());
 }

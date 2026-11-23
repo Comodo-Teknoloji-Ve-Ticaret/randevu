@@ -31,6 +31,14 @@ services:
       Cors__Origins__1: ${CORS_ORIGIN_2:-http://127.0.0.1:5318}
       # Yalnız demo/geliştirme sunucusunda true: "Demo verisini sıfırla" tüm veriyi değiştirir.
       Demo__AllowReset: ${DEMO_ALLOW_RESET:-false}
+      # Giriş/şifre sıfırlama denemesi: istemci başına dakikada (gerçek sunucuda 10 kalmalı)
+      RateLimit__AuthPerMinute: ${AUTH_PER_MINUTE:-10}
+      # Şifre sıfırlama e-postaları: Smtp boşsa simülasyon (kod API günlüğünde görünür)
+      Smtp__Host: ${SMTP_HOST:-}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__User: ${SMTP_USER:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__From: ${SMTP_FROM:-}
     ports:
       - "${API_PORT:-8080}:8080"
 
