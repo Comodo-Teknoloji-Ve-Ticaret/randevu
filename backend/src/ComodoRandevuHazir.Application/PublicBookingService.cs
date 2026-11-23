@@ -5,7 +5,8 @@ using static ComodoRandevuHazir.Application.RecordRules;
 
 namespace ComodoRandevuHazir.Application;
 
-public record BookingRequest(string BranchId, List<string> ServiceIds, string StaffId, string Date, int Start, string Name, string Phone, string? Note);
+/// <param name="MarketingConsent">İsteğe bağlı açık rıza: kampanya/fırsat mesajları (işaretsiz gelir).</param>
+public record BookingRequest(string BranchId, List<string> ServiceIds, string StaffId, string Date, int Start, string Name, string Phone, string? Note, bool? MarketingConsent = null);
 public record BookingResult(string Code, string Status);
 
 /// <summary>
@@ -119,16 +120,24 @@ public class PublicBookingService(IRecordStore records, IClock clock)
                 ?? throw new ConflictException("Bu saat az önce doldu. Lütfen başka bir saat seçin.");
 
             var rows = new List<RecordRow>();
-            var customerId = (await records.ListByFieldAsync(salon.TenantId, "customers", "phone", phone, ct)).FirstOrDefault()?.Id;
-            if (customerId is null)
-            {
-                customerId = NewId("m_");
-                rows.Add(Row("customers", customerId, salon.TenantId, new JsonObject
+            var existing = (await records.ListByFieldAsync(salon.TenantId, "customers", "phone", phone, ct)).FirstOrDefault();
+            var customerId = existing?.Id ?? NewId("m_");
+            // consentSms: randevu bilgilendirmesi (hizmet mesajı). consentMarketing: yalnız müşteri işaretlerse, zamanı ve kaynağıyla (İYS ispatı).
+            var customer = existing is null
+                ? new JsonObject
                 {
                     ["id"] = customerId, ["tenantId"] = salon.TenantId, ["name"] = req.Name.Trim(), ["phone"] = phone,
                     ["tags"] = new JsonArray("Yeni"), ["notes"] = "", ["consentSms"] = true, ["createdAt"] = clock.Today.ToString("yyyy-MM-dd"),
-                }));
+                }
+                : JsonNode.Parse(existing.Data)!.AsObject();
+            var optIn = req.MarketingConsent == true && customer["consentMarketing"]?.GetValue<bool>() != true;
+            if (optIn)
+            {
+                customer["consentMarketing"] = true;
+                customer["consentMarketingAt"] = clock.Now.ToString("o");
+                customer["consentMarketingSource"] = "online";
             }
+            if (existing is null || optIn) rows.Add(Row("customers", customerId, salon.TenantId, customer));
 
             var services = (await ListAsync(salon.TenantId, "services", ct)).ToDictionary(s => Str(s, "id")!);
             var items = req.ServiceIds.Select(id => new JsonObject

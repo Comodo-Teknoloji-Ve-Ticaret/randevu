@@ -17,6 +17,8 @@ export interface BookingInput {
   name: string
   phone: string
   note: string
+  /** İsteğe bağlı açık rıza: kampanya/fırsat mesajları */
+  marketingConsent?: boolean
 }
 
 /** Müşteri tarafı online randevu. Salonu slug ile bulur; yalnızca o salonun verisine erişir. */
@@ -76,9 +78,12 @@ export function bookingService(store: Store, slug: string, clock: Clock = istanb
     // Kayıttan hemen önce slotu yeniden doğrula
     const slot = slots(input.branchId, input.serviceIds, input.staffId, input.date).find((s) => s.start === input.start)
     if (!slot) return { ok: false, error: 'slot_taken' }
-    const customer = repos.customers.list({ phone })[0] ?? repos.customers.upsert({
+    let customer = repos.customers.list({ phone })[0] ?? repos.customers.upsert({
       name: input.name.trim(), phone, tags: ['Yeni'], notes: '', consentSms: true, createdAt: clock().date,
     })
+    if (input.marketingConsent && !customer.consentMarketing) {
+      customer = repos.customers.upsert({ ...customer, consentMarketing: true, consentMarketingAt: new Date().toISOString(), consentMarketingSource: 'online' })
+    }
     const status = t.onlineBooking.requireApproval ? 'pending' : 'confirmed'
     const { appt } = appointmentService(repos, clock).create({
       branchId: input.branchId, staffId: slot.staffId, customerId: customer.id, date: input.date, start: input.start,

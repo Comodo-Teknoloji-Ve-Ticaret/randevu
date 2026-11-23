@@ -6,6 +6,7 @@ import { formatTRY } from '../../domain/money'
 import { formatPhone } from '../../domain/phone'
 import { addDays, dayShort, formatDate, todayIstanbul, toHHMM } from '../../domain/time'
 import { Avatar, Button, cx, Field, Input, Textarea } from '../../ui'
+import { LegalDialog, type LegalDoc } from '../../ui/LegalDialog'
 import { useBookingSource } from './bookingSource'
 import './booking.css'
 
@@ -36,6 +37,8 @@ export default function BookingPage() {
   const [phone, setPhone] = useState('')
   const [note, setNote] = useState('')
   const [kvkk, setKvkk] = useState(false)
+  const [marketing, setMarketing] = useState(false)
+  const [legalDoc, setLegalDoc] = useState<LegalDoc | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{ code: string; status: string } | null>(null)
 
@@ -78,6 +81,8 @@ export default function BookingPage() {
     )
   }
   const t = info.tenant
+  const legalBranch = branch ?? info.branches[0]
+  const legalSalon = { name: t.name, address: legalBranch?.address ?? '', phone: legalBranch?.phone ?? '' }
   const closed = !t.onlineBooking.enabled
   const steps: Step[] = [...(info.branches.length > 1 ? (['branch'] as Step[]) : []), 'service', 'staff', 'time', 'info']
   const idx = steps.indexOf(effStep)
@@ -90,7 +95,7 @@ export default function BookingPage() {
 
   const submit = async () => {
     if (!branch || time === null) return
-    const r = await src.book({ branchId: branch.id, serviceIds, staffId, date, start: time, name, phone, note })
+    const r = await src.book({ branchId: branch.id, serviceIds, staffId, date, start: time, name, phone, note, marketingConsent: marketing })
     if (!r.ok) {
       setError(r.message)
       if (r.slotTaken) { setTime(null); setStep('time') }
@@ -227,7 +232,8 @@ export default function BookingPage() {
                 <Field label="Ad Soyad"><Input autoFocus icon={UserRound} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></Field>
                 <Field label="Cep telefonu" hint="Randevu bilgisi bu numaraya gönderilir."><Input icon={Phone} value={phone} onChange={(e) => { setPhone(e.target.value); setError(null) }} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" /></Field>
                 <Field label="Not (isteğe bağlı)"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Örn. saç uzunluğum omuz hizasında" /></Field>
-                <label className="bk-kvkk"><input type="checkbox" checked={kvkk} onChange={(e) => setKvkk(e.target.checked)} /> Kişisel verilerimin randevu işlemleri için işlenmesini ve bilgilendirme mesajı almayı kabul ediyorum.</label>
+                <label className="bk-kvkk"><input type="checkbox" checked={kvkk} onChange={(e) => setKvkk(e.target.checked)} /> <span><button type="button" className="bk-link" onClick={(e) => { e.preventDefault(); setLegalDoc('privacy') }}>Aydınlatma Metni</button>'ni okudum. Randevum ile ilgili bilgilendirme mesajları bu numaraya gönderilir.</span></label>
+                <label className="bk-kvkk"><input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} /> <span>Kampanya ve fırsatlardan SMS / WhatsApp ile haberdar olmak istiyorum (<button type="button" className="bk-link" onClick={(e) => { e.preventDefault(); setLegalDoc('consent') }}>Açık Rıza Metni</button>). <i>İsteğe bağlı.</i></span></label>
                 <div className="bk-summary">
                   <div><CalendarCheck2 size={16} /> {formatDate(date, { weekday: true })} · {toHHMM(time ?? 0)}</div>
                   <div><Scissors size={16} /> {chosen.map((s) => s.name).join(', ')}</div>
@@ -252,7 +258,8 @@ export default function BookingPage() {
           {effStep === 'info' && <Button variant="primary" size="lg" disabled={!name.trim() || phone.replace(/\D/g, '').length < 10 || !kvkk} onClick={submit}>Randevuyu onayla</Button>}
         </footer>
       )}
-      <p className="bk-powered">RandevuHazır ile online randevu</p>
+      <p className="bk-powered">RandevuHazır ile online randevu · <button type="button" className="bk-link" onClick={() => setLegalDoc('privacy')}>KVKK Aydınlatma Metni</button></p>
+      {legalDoc && <LegalDialog doc={legalDoc} salon={legalSalon} onClose={() => setLegalDoc(null)} />}
     </div>
   )
 }

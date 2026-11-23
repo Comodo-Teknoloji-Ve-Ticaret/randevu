@@ -12,8 +12,8 @@ public class MessageTests(TestApp app) : IClassFixture<TestApp>
 {
     private SimulatedSmsSender Sms => (SimulatedSmsSender)app.Services.GetRequiredService<ISmsSender>();
 
-    private static object Msg(string id, string customerId, string channel = "sms", string to = "5329999999", string body = "Hatırlatma: yarın 10:30") =>
-        new { id, customerId, kind = "reminder", channel, to, body, status = "simulated", at = "2026-11-24T09:00:00Z" };
+    private static object Msg(string id, string customerId, string channel = "sms", string to = "5329999999", string body = "Hatırlatma: yarın 10:30", string kind = "reminder") =>
+        new { id, customerId, kind, channel, to, body, status = "simulated", at = "2026-11-24T09:00:00Z" };
 
     private async Task<(HttpStatusCode Code, string Title)> Send(object[] upserts, object[]? deletes = null)
     {
@@ -53,6 +53,15 @@ public class MessageTests(TestApp app) : IClassFixture<TestApp>
         Expect(await Send([Up(Msg("ml_3", "m_a2", channel: "whatsapp"))]), HttpStatusCode.OK);
         Assert.Equal("opened", (await Stored("ml_3"))["status"]!.GetValue<string>());
         Assert.DoesNotContain(Sms.Sent, s => s.To == "5321112244");
+    }
+
+    [Fact]
+    public async Task Campaign_sms_needs_explicit_marketing_consent()
+    {
+        // m_a1: ileti (hatırlatma) izni var, kampanya için açık rızası yok
+        Expect(await Send([Up(Msg("ml_c1", "m_a1", kind: "birthday", body: "İyi ki doğdun!"))]), HttpStatusCode.BadRequest, "Müşterinin kampanya mesajı için açık rızası yok");
+        Expect(await Send([Up(new { id = "m_a1", name = "Elif", phone = "5321112233", consentSms = true, consentMarketing = true }, "customers")]), HttpStatusCode.OK);
+        Expect(await Send([Up(Msg("ml_c2", "m_a1", kind: "birthday", body: "İyi ki doğdun!"))]), HttpStatusCode.OK);
     }
 
     [Fact]

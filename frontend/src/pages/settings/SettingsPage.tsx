@@ -10,6 +10,7 @@ import { httpStore, useRepos, useStore } from '../../infrastructure'
 import { apiFetch, apiMode } from '../../infrastructure/api'
 import { Avatar, Badge, Button, cx, Drawer, Field, Input, PageHeader, Select, Switch, useToast } from '../../ui'
 import { HoursEditor } from '../staff/StaffPage'
+import { LegalDialog, type LegalDoc } from '../../ui/LegalDialog'
 import '../staff/staff.css'
 import './settings.css'
 
@@ -297,8 +298,11 @@ function OnlineSection() {
   const repos = useRepos()
   const { tenant } = useSession()
   const toast = useToast()
+  const { branch } = useSession()
+  const [legalDoc, setLegalDoc] = useState<LegalDoc | null>(null)
   if (!tenant) return null
   const ob = tenant.onlineBooking
+  const legalSalon = { name: tenant.name, address: branch?.address ?? '', phone: branch?.phone ?? '' }
   const set = (p: Partial<typeof ob>) => { repos.tenants.upsert({ ...tenant, onlineBooking: { ...ob, ...p } }); toast('Kaydedildi') }
   return (
     <div className="card card-pad stack">
@@ -315,6 +319,14 @@ function OnlineSection() {
       </div>
       <p className="t-small muted">Hangi hizmetlerin online görüneceğini Hizmetler sayfasından seçebilirsiniz.</p>
       <Button icon={ExternalLink} onClick={() => window.open(bookingUrl(tenant.slug), '_blank')} style={{ alignSelf: 'flex-start' }}>Sayfayı önizle</Button>
+      <div className="divider" />
+      <h3 className="set-h">KVKK metinleri</h3>
+      <p className="t-small muted">Online randevu sayfasında müşterilere gösterilir; salon adı, adres ve telefon bilgilerinizle doldurulur. Salonda yüz yüze kayıt alırken de müşteriye iletebilirsiniz (kopyala → WhatsApp/çıktı). <b>Bu metinler taslaktır; kullanmadan önce hukuk danışmanınıza onaylatın.</b></p>
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <Button onClick={() => setLegalDoc('privacy')}>Aydınlatma metni</Button>
+        <Button onClick={() => setLegalDoc('consent')}>Açık rıza metni (kampanya)</Button>
+      </div>
+      {legalDoc && <LegalDialog doc={legalDoc} salon={legalSalon} copyable onClose={() => setLegalDoc(null)} />}
     </div>
   )
 }

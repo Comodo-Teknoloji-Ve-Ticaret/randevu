@@ -15,6 +15,15 @@ describe('bookingService', () => {
     expect(a).toMatchObject({ status: 'pending', staffId: 's1', start: 600, end: 630 })
     expect(r.customers.list({ phone: '5354445566' })).toHaveLength(1)
   })
+  it('records optional marketing consent with time and source, never by default', () => {
+    const r = setup()
+    const b = bookingService(r.store, 'test', clock)
+    b.book(input)
+    expect(r.customers.list({ phone: '5354445566' })[0].consentMarketing).toBeUndefined()
+    b.book({ ...input, start: 660, marketingConsent: true })
+    expect(r.customers.list({ phone: '5354445566' })[0]).toMatchObject({ consentMarketing: true, consentMarketingSource: 'online' })
+    expect(r.customers.list({ phone: '5354445566' })[0].consentMarketingAt).toBeTruthy()
+  })
   it('refuses the same slot twice', () => {
     const r = setup()
     const b = bookingService(r.store, 'test', clock)

@@ -205,6 +205,7 @@ export function CustomerEditor({ customer, onClose, onSaved }: { customer?: Cust
   const [f, setF] = useState({
     name: customer?.name ?? '', phone: customer ? formatPhone(customer.phone) : '', birthday: customer?.birthday ?? '',
     gender: customer?.gender, tags: customer?.tags ?? [], notes: customer?.notes ?? '', consentSms: customer?.consentSms ?? true,
+    consentMarketing: customer?.consentMarketing ?? false, consentMarketingAt: customer?.consentMarketingAt, consentMarketingSource: customer?.consentMarketingSource,
   })
   const [err, setErr] = useState<string | null>(null)
   const save = () => {
@@ -247,8 +248,17 @@ export function CustomerEditor({ customer, onClose, onSaved }: { customer?: Cust
         <Textarea value={f.notes} rows={4} onChange={(e) => setF({ ...f, notes: e.target.value })} />
       </Field>
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <div><div className="t-strong">SMS / WhatsApp izni</div><div className="t-small muted">KVKK kapsamında ileti onayı</div></div>
+        <div><div className="t-strong">Randevu bilgilendirme mesajları</div><div className="t-small muted">Onay, hatırlatma ve iptal SMS'leri (hizmet mesajı)</div></div>
         <Switch on={f.consentSms} onChange={(v) => setF({ ...f, consentSms: v })} label="İleti izni" />
+      </div>
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <div>
+          <div className="t-strong">Kampanya mesajı izni</div>
+          <div className="t-small muted">{f.consentMarketing && f.consentMarketingAt
+            ? `Açık rıza: ${formatDate(f.consentMarketingAt.slice(0, 10), { year: true })} · ${f.consentMarketingSource === 'online' ? 'online randevuda' : 'salonda'}`
+            : 'Yalnız müşterinin açık rızasıyla açın (yazılı/sözlü onay alın)'}</div>
+        </div>
+        <Switch on={f.consentMarketing} label="Kampanya izni" onChange={(v) => setF({ ...f, consentMarketing: v, consentMarketingAt: v ? new Date().toISOString() : undefined, consentMarketingSource: v ? 'salon' : undefined })} />
       </div>
     </Drawer>
   )

@@ -121,7 +121,12 @@ export interface Customer {
   gender?: 'k' | 'e'
   tags: string[]
   notes: string
+  /** Randevu bilgilendirme/hatırlatma mesajları (hizmet mesajı) */
   consentSms: boolean
+  /** Kampanya/kutlama mesajları için açık rıza (KVKK m.5/1, 6563 s. Kanun); zamanı ve kaynağıyla */
+  consentMarketing?: boolean
+  consentMarketingAt?: string
+  consentMarketingSource?: 'online' | 'salon'
   createdAt: string
 }
 

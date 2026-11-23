@@ -31,10 +31,13 @@ public class MessageRules(IRecordStore records, ISmsSender sms)
             }
             if (customer is null) throw new ValidationException("SMS için müşteri gerekli.");
             if (customer["consentSms"]?.GetValue<bool>() != true) throw new ValidationException("Müşterinin ileti izni yok.");
+            var commercial = Str(m.Data, "kind") is "birthday" or "winback";
+            if (commercial && customer["consentMarketing"]?.GetValue<bool>() != true)
+                throw new ValidationException("Müşterinin kampanya mesajı için açık rızası yok.");
             var to = Str(customer, "phone") is { Length: > 0 } p ? p : throw new ValidationException("Müşterinin telefon numarası yok.");
             m.Data["to"] = to;
             m.Data["status"] = sms.LogStatus;
-            outgoing.Add(new OutgoingSms(m.Id, m.TenantId, to, Str(m.Data, "body")!, Commercial: Str(m.Data, "kind") is "birthday" or "winback"));
+            outgoing.Add(new OutgoingSms(m.Id, m.TenantId, to, Str(m.Data, "body")!, Commercial: commercial));
         }
         return outgoing;
     }

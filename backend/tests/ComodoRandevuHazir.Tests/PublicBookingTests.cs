@@ -6,8 +6,8 @@ namespace ComodoRandevuHazir.Tests;
 
 public class PublicBookingTests(TestApp app) : IClassFixture<TestApp>
 {
-    private static object Booking(int start, string phone = "0535 444 55 66", string staffId = "any") =>
-        new { branchId = "b_a", serviceIds = new[] { "sv_a" }, staffId, date = Fixture.Tomorrow, start, name = "Deniz Ak", phone, note = "" };
+    private static object Booking(int start, string phone = "0535 444 55 66", string staffId = "any", bool? marketingConsent = null) =>
+        new { branchId = "b_a", serviceIds = new[] { "sv_a" }, staffId, date = Fixture.Tomorrow, start, name = "Deniz Ak", phone, note = "", marketingConsent };
 
     private async Task<int[]> Slots() =>
         (await app.CreateClient().GetFromJsonAsync<JsonArray>($"/api/public/salon-a/slots?branchId=b_a&serviceIds=sv_a&staffId=any&date={Fixture.Tomorrow}"))!
@@ -78,6 +78,25 @@ public class PublicBookingTests(TestApp app) : IClassFixture<TestApp>
         Assert.Equal(3, map!.Count);
         Assert.Contains(map[Fixture.Tomorrow]!.AsArray(), s => s!["start"]!.GetValue<int>() == 540);
         Assert.True(map.ContainsKey(Fixture.InDays(3)));
+    }
+
+    [Fact]
+    public async Task Marketing_consent_is_optional_and_recorded_with_time_and_source()
+    {
+        await app.CreateClient().PostAsJsonAsync("/api/public/salon-a/book", Booking(780, "05351110001"));
+        var none = await OwnerSees("customers", c => c["phone"]?.GetValue<string>() == "5351110001");
+        Assert.NotEqual(true, none!["consentMarketing"]?.GetValue<bool>());
+        Assert.True(none["consentSms"]!.GetValue<bool>()); // randevu hatırlatması hizmet mesajıdır
+
+        await app.CreateClient().PostAsJsonAsync("/api/public/salon-a/book", Booking(840, "05351110002", marketingConsent: true));
+        var yes = await OwnerSees("customers", c => c["phone"]?.GetValue<string>() == "5351110002");
+        Assert.True(yes!["consentMarketing"]!.GetValue<bool>());
+        Assert.False(string.IsNullOrEmpty(yes["consentMarketingAt"]!.GetValue<string>()));
+        Assert.Equal("online", yes["consentMarketingSource"]!.GetValue<string>());
+
+        // Kayıtlı müşteri sonradan izin verirse kaydı güncellenir
+        await app.CreateClient().PostAsJsonAsync("/api/public/salon-a/book", Booking(960, "05351110001", marketingConsent: true));
+        Assert.True((await OwnerSees("customers", c => c["phone"]?.GetValue<string>() == "5351110001"))!["consentMarketing"]!.GetValue<bool>());
     }
 
     [Fact]
