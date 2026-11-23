@@ -74,6 +74,7 @@ public static class Fixture
     /// <summary>Her gün 09:00–18:00.</summary>
     public const string Hours = """{"0":{"open":540,"close":1080},"1":{"open":540,"close":1080},"2":{"open":540,"close":1080},"3":{"open":540,"close":1080},"4":{"open":540,"close":1080},"5":{"open":540,"close":1080},"6":{"open":540,"close":1080}}""";
     public static string Tomorrow => DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).AddDays(1).ToString("yyyy-MM-dd");
+    public static string InDays(int n) => DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).AddDays(n).ToString("yyyy-MM-dd");
     public static string DaysAgo(int n) => DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).AddDays(-n).ToString("yyyy-MM-dd");
 
     public static JsonObject Db() => JsonNode.Parse($$"""
@@ -105,6 +106,13 @@ public static class Fixture
       ],
       "categories": [ { "id": "c_a", "tenantId": "t_a", "name": "Kesim", "color": "kesim", "order": 0 } ],
       "services": [ { "id": "sv_a", "tenantId": "t_a", "categoryId": "c_a", "name": "Kesim", "duration": 30, "price": 50000, "online": true, "overrides": {} } ],
+      "products": [ { "id": "p_a1", "tenantId": "t_a", "name": "Şampuan", "brand": "Loreal", "category": "Şampuan", "kind": "retail", "price": 50000, "cost": 30000, "vatRate": 20, "stock": 5, "critical": 2 } ],
+      "packageDefs": [ { "id": "pd_a", "tenantId": "t_a", "name": "5+1 Fön", "items": [ { "serviceId": "sv_a", "count": 3, "bonus": 1 } ], "price": 150000, "validDays": 90, "active": true } ],
+      "customerPackages": [
+        { "id": "cp_a1", "tenantId": "t_a", "customerId": "m_a1", "packageDefId": "pd_a", "remaining": { "sv_a": 2 }, "soldOn": "{{DaysAgo(10)}}", "expiresOn": "{{InDays(80)}}" },
+        { "id": "cp_a2", "tenantId": "t_a", "customerId": "m_a1", "packageDefId": "pd_a", "remaining": { "sv_a": 1 }, "soldOn": "{{DaysAgo(10)}}", "expiresOn": "{{InDays(80)}}" },
+        { "id": "cp_old", "tenantId": "t_a", "customerId": "m_a1", "packageDefId": "pd_a", "remaining": { "sv_a": 3 }, "soldOn": "{{DaysAgo(100)}}", "expiresOn": "{{DaysAgo(10)}}" }
+      ],
       "customers": [
         { "id": "m_a1", "tenantId": "t_a", "name": "Elif", "phone": "5321112233" },
         { "id": "m_b1", "tenantId": "t_b", "name": "Burak", "phone": "5329998877" }

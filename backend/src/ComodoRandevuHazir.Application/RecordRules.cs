@@ -20,6 +20,28 @@ public static class RecordRules
                 RequireDate(data);
                 RequireRange(data, "Blok saatleri geçersiz.");
                 break;
+            case "products":
+                if (Str(data, "name") is not { Length: > 0 } || Str(data, "kind") is not ("retail" or "professional")
+                    || Int(data, "price") is not >= 0 || Int(data, "cost") is not >= 0 || Int(data, "vatRate") is not (>= 0 and <= 100)
+                    || Int(data, "critical") is not >= 0 || Int(data, "stock") is null)
+                    throw new ValidationException("Ürün bilgileri geçersiz.");
+                break;
+            case "stockMoves":
+                RequireDate(data);
+                var ok = (Str(data, "kind"), Int(data, "qty")) switch
+                {
+                    ("in", > 0) or ("sale", < 0) or ("use", < 0) => true,
+                    ("adjust", { } q) => q != 0,
+                    _ => false,
+                };
+                if (!ok || Str(data, "productId") is not { Length: > 0 }) throw new ValidationException("Stok hareketi geçersiz.");
+                break;
+            case "packageDefs":
+                var items = data["items"] as JsonArray;
+                if (Str(data, "name") is not { Length: > 0 } || Int(data, "price") is not >= 0 || Int(data, "validDays") is not > 0 || items is not { Count: > 0 }
+                    || items.Any(i => i is not JsonObject o || Str(o, "serviceId") is null || Int(o, "count") is not > 0 || o["bonus"] is not null && Int(o, "bonus") is not >= 0))
+                    throw new ValidationException("Paket bilgileri geçersiz.");
+                break;
             case "customers":
                 if (Str(data, "phone") is { Length: > 0 } phone && !Phone.IsNormalized(phone)) throw new ValidationException("Telefon numarası geçersiz.");
                 break;

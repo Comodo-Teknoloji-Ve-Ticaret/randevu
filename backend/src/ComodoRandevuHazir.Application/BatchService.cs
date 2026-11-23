@@ -8,7 +8,7 @@ namespace ComodoRandevuHazir.Application;
 /// Ön yüzün değişikliklerini (eklenen/güncellenen/silinen kayıtlar) tek işlemde uygular.
 /// Her kayıt kiracıya bağlanır; rol yetkisi, korunan alanlar ve kiracı içi başvurular doğrulanır.
 /// </summary>
-public partial class BatchService(IRecordStore records, CashRules cash)
+public partial class BatchService(IRecordStore records, CashRules cash, StockPackageRules stock)
 {
     public const int MaxOperations = 5000;
     private const string NoAccess = "Bu kayda erişim yetkiniz yok.";
@@ -25,6 +25,8 @@ public partial class BatchService(IRecordStore records, CashRules cash)
         ["appointments"] = [("staffId", "staff", "Personel bulunamadı."), ("branchId", "branches", "Şube bulunamadı."), ("customerId", "customers", "Müşteri bulunamadı.")],
         ["blocks"] = [("staffId", "staff", "Personel bulunamadı.")],
         ["colorCards"] = [("customerId", "customers", "Müşteri bulunamadı.")],
+        ["stockMoves"] = [("productId", "products", "Ürün bulunamadı.")],
+        ["customerPackages"] = [("customerId", "customers", "Müşteri bulunamadı."), ("packageDefId", "packageDefs", "Paket bulunamadı.")],
     };
 
     public async Task<int> ApplyAsync(Identity who, BatchRequest req, CancellationToken ct)
@@ -66,10 +68,12 @@ public partial class BatchService(IRecordStore records, CashRules cash)
             pendingDeletes.Add(new PendingDelete(key, old.TenantId, oldData));
         }
 
+        List<RecordRow> Rows() => [.. pending.Select(w => new RecordRow(w.Collection, w.Id, w.TenantId, w.Data.ToJsonString()))];
+        await CheckReferencesAsync(Rows(), ct); // önce "bulunamadı" hataları: en anlaşılır mesaj
         await cash.CheckAsync(who, pending, pendingDeletes, ct); // gün sonu beklenen nakdi burada yazılır
-        var rows = pending.Select(w => new RecordRow(w.Collection, w.Id, w.TenantId, w.Data.ToJsonString())).ToList();
+        await stock.CheckAsync(pending, pendingDeletes, ct);
+        var rows = Rows();
 
-        await CheckReferencesAsync(rows, ct);
         await CheckUniquePhonesAsync(rows, ct);
         await CheckUniqueSlugsAsync(rows, ct);
         await records.ApplyAsync(rows, dels, ct);
@@ -184,11 +188,15 @@ public partial class BatchService(IRecordStore records, CashRules cash)
         var needed = new List<(RecordKey Key, string? TenantId, string Message)>();
         foreach (var r in rows)
         {
-            if (!References.TryGetValue(r.Collection, out var refs)) continue;
+            var refs = References.GetValueOrDefault(r.Collection) ?? [];
             var data = JsonNode.Parse(r.Data)!;
             foreach (var (field, target, message) in refs)
                 if (data[field] is JsonValue v && v.TryGetValue<string>(out var refId) && refId.Length > 0)
                     needed.Add((new RecordKey(target, refId), r.TenantId, message));
+            // Paket tanımındaki her hizmet salonda var olmalı.
+            if (r.Collection == "packageDefs")
+                foreach (var item in (data["items"] as JsonArray ?? []).OfType<JsonObject>())
+                    if (RecordRules.Str(item, "serviceId") is { Length: > 0 } sid) needed.Add((new RecordKey("services", sid), r.TenantId, "Hizmet bulunamadı."));
         }
         if (needed.Count == 0) return;
         var found = (await records.GetManyAsync([.. needed.Select(n => n.Key).Distinct()], ct)).ToDictionary(r => new RecordKey(r.Collection, r.Id), r => r.TenantId);
