@@ -33,16 +33,50 @@ function makeXlsx(rows) {
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
+// Sunucu modu: API_URL tanımlıysa her test başında sunucu demo verisiyle sıfırlanır ve gerçek e-posta/şifreyle giriş yapılır.
+// (Sunucuda Demo:AllowReset=true; uygulama VITE_API_URL ile çalışıyor olmalı.)
+const API = process.env.API_URL?.replace(/\/$/, '')
+let SEED = null
+if (API) {
+  const { createServer } = await import('vite')
+  const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error' })
+  const { buildSeed } = await vite.ssrLoadModule('/src/infrastructure/seed.ts')
+  const { todayIstanbul, nowMinutesIstanbul } = await vite.ssrLoadModule('/src/domain/time.ts')
+  SEED = JSON.stringify(buildSeed(todayIstanbul(), nowMinutesIstanbul()))
+  await vite.close()
+}
+const demoEmail = (id) => `${id.replace(/^u_/, '').replace(/^t_/, '').replace(/_/g, '.')}@demo.randevuhazir.com.tr`
+async function apiReset(body = SEED) {
+  const r = await fetch(API + '/api/dev/reset', { method: 'POST', headers: { 'content-type': 'application/json' }, body })
+  if (!r.ok) throw new Error(`demo sıfırlanamadı: ${r.status}`)
+}
+async function apiToken(user) {
+  const r = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: demoEmail(user), password: 'demo1234' }) })
+  if (!r.ok) throw new Error(`giriş yapılamadı: ${user}`)
+  return (await r.json()).token
+}
+/** Oturumu verilen kullanıcıya geçirir (sunucu modunda gerçek giriş). */
+async function asUser(user) {
+  const token = API && user ? await apiToken(user) : null
+  await page.evaluate((u, t, api) => {
+    localStorage.setItem('makas:session', JSON.stringify({ userId: u || null, branchId: null, theme: 'light' }))
+    if (api) { if (t) localStorage.setItem('rh:token', t); else localStorage.removeItem('rh:token') }
+  }, user, token, !!API)
+}
+
 async function fresh(user, w = 1440, h = 900) {
   if (page) await page.close()
   page = await b.newPage()
   await page.setViewport({ width: w, height: h })
   page.on('pageerror', (e) => errs.push(`[pageerror] ${e.message}`))
-  page.on('console', (m) => m.type() === 'error' && errs.push(`[console] ${m.text()}`))
+  // Sunucu modunda bilinçli redler (403/404/409…) tarayıcı konsoluna "Failed to load resource" olarak düşer; hata sayılmaz.
+  page.on('console', (m) => m.type() === 'error' && !(API && /Failed to load resource: the server responded with a status of 4\d\d/.test(m.text())) && errs.push(`[console] ${m.text()}`))
   page.on('dialog', (d) => d.dismiss())
   await page.evaluateOnNewDocument(() => { window.open = (u) => { window.__opened = u; return null } })
   await page.goto(BASE + '#/giris', { waitUntil: 'networkidle0' })
-  await page.evaluate((u) => { localStorage.removeItem('makas:v1'); localStorage.setItem('makas:session', JSON.stringify({ userId: u || null, branchId: null, theme: 'light' })) }, user)
+  if (API) await apiReset()
+  else await page.evaluate(() => localStorage.removeItem('makas:v1'))
+  await asUser(user)
 }
 async function go(path) {
   await page.goto('about:blank')
@@ -96,7 +130,20 @@ const text = () => page.evaluate(() => document.body.innerText)
 async function expectText(t) { const s = await text(); if (!s.includes(t)) throw new Error(`metin yok: "${t}"`) }
 async function noText(t) { const s = await text(); if (s.includes(t)) throw new Error(`olmaması gereken metin: "${t}"`) }
 const count = (sel) => page.evaluate((s) => document.querySelectorAll(s).length, sel)
-const db = () => page.evaluate(() => JSON.parse(localStorage.getItem('makas:v1')))
+/** Uygulamanın verisi: tarayıcı modunda localStorage, sunucu modunda /api/sync (yazımların gitmesi beklenir). */
+async function db() {
+  if (!API) return page.evaluate(() => JSON.parse(localStorage.getItem('makas:v1')))
+  await sleep(400)
+  const token = await page.evaluate(() => localStorage.getItem('rh:token'))
+  return (await fetch(API + '/api/sync', { headers: { authorization: `Bearer ${token}` } })).json()
+}
+/** Test için veriyi doğrudan değiştirir (ör. yarına randevu taşımak). */
+async function editDb(mutate) {
+  if (!API) return page.evaluate((src) => { const d = JSON.parse(localStorage.getItem('makas:v1')); new Function('d', src)(d); localStorage.setItem('makas:v1', JSON.stringify(d)) }, mutate)
+  const d = await db()
+  new Function('d', mutate)(d)
+  await apiReset(JSON.stringify(d))
+}
 
 async function step(name, fn) {
   const before = errs.length
@@ -169,8 +216,8 @@ const suites = {
       await fresh('u_platform'); await go('/platform')
       await page.evaluate(() => [...document.querySelectorAll('tbody tr')].find((r) => r.textContent.includes('Berber Mert')).querySelector('[aria-label=Diğer]').click()); await sleep(200)
       await clickText('Askıya al', '.menu button'); await clickText('Askıya al', '.modal button'); await sleep(300)
-      await page.evaluate(() => localStorage.setItem('makas:session', JSON.stringify({ userId: null, branchId: null, theme: 'light' })))
-      await go('/giris'); await clickText('Mert Öztürk', '.login-user'); await sleep(300)
+      await asUser(null)
+      await go('/giris'); await clickText('Mert Öztürk', '.login-user'); await sleep(800)
       await expectText('askıya alınmış')
       await go('/r/berber-mert'); await expectText('Salon bulunamadı')
     })
@@ -222,7 +269,7 @@ const suites = {
     await fresh('')
     await step('Giriş: demo hesaplar listelenir', async () => { await go('/giris'); await expectText('Studio Lara'); await expectText('Comodo Yönetici') })
     await step('Giriş: sahip olarak gir', async () => { await clickText('Zeynep Arıkan', '.login-user'); await sleep(500); await expectText('Randevu') })
-    await step('Çıkış', async () => { await page.click('.sidebar-foot .user-btn'); await clickText('Çıkış yap', '.menu button'); await sleep(300); await expectText('Demo hesabıyla giriş') })
+    await step('Çıkış', async () => { await page.click('.sidebar-foot .user-btn'); await clickText('Çıkış yap', '.menu button'); await sleep(300); await expectText('Bir rol seçin') })
   },
   async calendar() {
     await fresh('u_t_lara_rec')
@@ -555,7 +602,7 @@ const suites = {
     await fresh('u_t_lara_rec')
     await step('Paket akışı: paketli müşteriye hizmet → paketten düşer', async () => {
       await go('/kasa')
-      const cust = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem('makas:v1')); const cp = d.customerPackages.find((c) => c.tenantId === 't_lara' && Object.values(c.remaining).some((n) => n > 0) && c.expiresOn > '2026'); const c = d.customers.find((x) => x.id === cp.customerId); const svc = d.services.find((s) => s.id === Object.keys(cp.remaining).find((k) => cp.remaining[k] > 0)); return { name: c.name, svc: svc.name } })
+      const cust = ((d) => { const cp = d.customerPackages.find((c) => c.tenantId === 't_lara' && Object.values(c.remaining).some((n) => n > 0) && c.expiresOn > '2026'); const c = d.customers.find((x) => x.id === cp.customerId); const svc = d.services.find((s) => s.id === Object.keys(cp.remaining).find((k) => cp.remaining[k] > 0)); return { name: c.name, svc: svc.name } })(await db())
       await clickText('Yeni adisyon', '.ticket-list button')
       await setInput('.ticket .input-icon input', cust.name.split(' ')[0])
       await sleep(300)
@@ -580,14 +627,12 @@ const suites = {
     })
     await step('Mesajlar: tümüne WhatsApp (tek tek)', async () => {
       // yarın kapalı olabilir: 3 gelecek randevuyu yarına taşı, izinleri aç
-      await page.evaluate(() => {
-        const d = JSON.parse(localStorage.getItem('makas:v1'))
+      await editDb(`
         const t = new Date(Date.now() + 864e5).toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' })
         const ids = new Set(d.messages.filter((m) => m.kind === 'reminder').map((m) => m.appointmentId))
         const pick = d.appointments.filter((a) => a.tenantId === 't_lara' && a.customerId && a.status === 'confirmed' && !ids.has(a.id)).slice(0, 3)
         pick.forEach((a, i) => { a.date = t; a.start = 600 + i * 60; a.end = a.start + 30; const c = d.customers.find((x) => x.id === a.customerId); c.consentSms = true })
-        localStorage.setItem('makas:v1', JSON.stringify(d))
-      })
+      `)
       await go('/mesajlar')
       const n = await count('.list .list-item')
       if (n < 3) throw new Error(`yarın listesi ${n}`)
@@ -600,6 +645,8 @@ const suites = {
       await clickText("WhatsApp'ta aç", '.modal button')
       const u2 = await page.evaluate(() => window.__opened)
       if (u2 === u1) throw new Error('aynı kişiye tekrar açıldı')
+      // Yarın zaten randevu olabilir: kuyruk uzunluğu güne göre değişir, kalanları atla
+      for (let i = 0; i < 20 && !(await text()).includes('gönderildi'); i++) await clickText('Atla', '.modal button')
       await expectText('gönderildi'); await clickText('Bitti', '.modal button')
       const d = await db()
       const wa = d.messages.filter((m) => m.channel === 'whatsapp' && m.kind === 'reminder').length
@@ -642,11 +689,12 @@ const suites = {
       const url = await page.evaluate(() => document.querySelector('.invite-box code').textContent)
       await page.goto('about:blank'); await page.goto(url, { waitUntil: 'networkidle0' }); await sleep(300)
       await fill('Cep telefonu', '05321234567')
-      await clickText('Panelime gir', 'button'); await sleep(500)
+      if (API) { await fill('E-posta', `ali.${Date.now()}@test.local`); await fill('Şifre', 'gizli-sifre-1') }
+      await clickText('Panelime gir', 'button'); await sleep(API ? 1500 : 500)
       await expectText('Test Berber')
     })
     await step('Platform: lisans uzat', async () => {
-      await page.evaluate(() => localStorage.setItem('makas:session', JSON.stringify({ userId: 'u_platform', branchId: null, theme: 'light' })))
+      await asUser('u_platform')
       await go('/platform')
       await page.evaluate(() => [...document.querySelectorAll('tbody tr')].find((r) => r.textContent.includes('Nüans')).querySelector('.btn').click()); await sleep(300)
       await clickText('90 gün', '.modal .pay-q'); await clickText('90 gün uzat', '.modal button'); await sleep(300)

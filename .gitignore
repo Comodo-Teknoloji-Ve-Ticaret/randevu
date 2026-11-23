@@ -7,3 +7,6 @@ obj/
 **/e2e/fail-*.png
 graphify-out/
 frontend/promo/out/
+
+# Sunucu ayarları ve şifreler (örnek: .env.example)
+.env

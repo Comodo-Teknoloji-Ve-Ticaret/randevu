@@ -9,6 +9,8 @@ public class RecordEntity
     public string? TenantId { get; set; }
     public required string Data { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    /// <summary>Ekleme sırası: ön yüz dizilerin sırasına güvenir (ilk şube varsayılan, personel sırası…).</summary>
+    public long Seq { get; set; }
 }
 
 public class CredentialEntity
@@ -23,8 +25,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<RecordEntity> Records => Set<RecordEntity>();
     public DbSet<CredentialEntity> Credentials => Set<CredentialEntity>();
 
+    public const string RecordSequence = "records_seq";
+
     protected override void OnModelCreating(ModelBuilder b)
     {
+        b.HasSequence<long>(RecordSequence);
         b.Entity<RecordEntity>(e =>
         {
             e.ToTable("records");
@@ -34,6 +39,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.TenantId).HasColumnName("tenant_id").HasMaxLength(80);
             e.Property(x => x.Data).HasColumnName("data").HasColumnType("jsonb");
             e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+            e.Property(x => x.Seq).HasColumnName("seq").HasDefaultValueSql($"nextval('{RecordSequence}')");
             e.HasIndex(x => new { x.TenantId, x.Collection });
         });
         b.Entity<CredentialEntity>(e =>

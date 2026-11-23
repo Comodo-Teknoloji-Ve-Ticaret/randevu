@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "e2e": "node e2e/smoke.mjs"
+    "e2e": "node e2e/smoke.mjs",
+    "seed:api": "node scripts/seed-api.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.77.0",

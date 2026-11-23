@@ -22,6 +22,8 @@ namespace ComodoRandevuHazir.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence("records_seq");
+
             modelBuilder.Entity("ComodoRandevuHazir.Infrastructure.Persistence.CredentialEntity", b =>
                 {
                     b.Property<string>("UserId")
@@ -64,6 +66,12 @@ namespace ComodoRandevuHazir.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("data");
+
+                    b.Property<long>("Seq")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("seq")
+                        .HasDefaultValueSql("nextval('records_seq')");
 
                     b.Property<string>("TenantId")
                         .HasMaxLength(80)

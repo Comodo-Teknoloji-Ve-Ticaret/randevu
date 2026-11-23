@@ -145,6 +145,21 @@ public class BatchTests(TestApp app) : IClassFixture<TestApp>
     }
 
     [Fact]
+    public async Task Sync_keeps_insertion_order_like_the_frontend()
+    {
+        // Ön yüz dizilerin ekleme sırasına güvenir (ilk şube varsayılan, personel sırası vb.).
+        var c = await app.LoginAsync("ayse@test.local");
+        await AssertStatus(HttpStatusCode.OK, Batch(c, [Up("customers", new { id = "m_zz", name = "Önce" }), Up("customers", new { id = "m_aa", name = "Sonra" })]));
+        var ids = (await c.GetFromJsonAsync<JsonObject>("/api/sync"))!["customers"]!.AsArray().Select(x => x!["id"]!.GetValue<string>()).ToList();
+        Assert.True(ids.IndexOf("m_zz") < ids.IndexOf("m_aa"), string.Join(",", ids));
+        Assert.Equal(["m_a1", "m_a2"], ids.Take(2)); // içe aktarma sırası korunur
+        // Güncelleme sırayı değiştirmez
+        await AssertStatus(HttpStatusCode.OK, Batch(c, [Up("customers", new { id = "m_zz", name = "Önce (güncel)" })]));
+        var again = (await c.GetFromJsonAsync<JsonObject>("/api/sync"))!["customers"]!.AsArray().Select(x => x!["id"]!.GetValue<string>()).ToList();
+        Assert.Equal(ids, again);
+    }
+
+    [Fact]
     public async Task Owner_deletes_own_record()
     {
         var c = await app.LoginAsync("ayse@test.local");

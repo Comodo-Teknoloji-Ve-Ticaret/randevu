@@ -28,6 +28,9 @@ services:
       ConnectionStrings__Db: Host=db;Database=${DB_NAME:-randevuhazir};Username=${DB_USER:-randevuhazir};Password=${DB_PASSWORD:-randevuhazir}
       Jwt__Key: ${JWT_KEY:-yerel-gelistirme-anahtari-en-az-32-karakter-uzunlugunda}
       Cors__Origins__0: ${CORS_ORIGIN:-http://127.0.0.1:5317}
+      Cors__Origins__1: ${CORS_ORIGIN_2:-http://127.0.0.1:5318}
+      # Yalnız demo/geliştirme sunucusunda true: "Demo verisini sıfırla" tüm veriyi değiştirir.
+      Demo__AllowReset: ${DEMO_ALLOW_RESET:-false}
     ports:
       - "${API_PORT:-8080}:8080"
 

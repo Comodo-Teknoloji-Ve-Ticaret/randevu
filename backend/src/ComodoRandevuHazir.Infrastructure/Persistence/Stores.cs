@@ -8,7 +8,7 @@ public partial class RecordStore(AppDbContext db, TimeProvider time) : IRecordSt
     public async Task<IReadOnlyList<RecordRow>> ListAsync(string? tenantId, CancellationToken ct) =>
         await db.Records.AsNoTracking()
             .Where(r => tenantId == null || r.TenantId == tenantId)
-            .OrderBy(r => r.Collection).ThenBy(r => r.Id)
+            .OrderBy(r => r.Seq)
             .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
             .ToListAsync(ct);
 
@@ -21,6 +21,7 @@ public partial class RecordStore(AppDbContext db, TimeProvider time) : IRecordSt
     public async Task UpsertManyAsync(IReadOnlyCollection<RecordRow> rows, CancellationToken ct)
     {
         var now = time.GetUtcNow();
+        var added = new List<RecordEntity>();
         foreach (var group in rows.GroupBy(r => r.Collection))
         {
             var ids = group.Select(r => r.Id).ToList();
@@ -28,8 +29,17 @@ public partial class RecordStore(AppDbContext db, TimeProvider time) : IRecordSt
             foreach (var r in group)
             {
                 if (existing.TryGetValue(r.Id, out var e)) { e.TenantId = r.TenantId; e.Data = r.Data; e.UpdatedAt = now; }
-                else db.Records.Add(new RecordEntity { Collection = r.Collection, Id = r.Id, TenantId = r.TenantId, Data = r.Data, UpdatedAt = now });
+                else if (added.FirstOrDefault(a => a.Collection == r.Collection && a.Id == r.Id) is { } dup) { dup.TenantId = r.TenantId; dup.Data = r.Data; }
+                else added.Add(new RecordEntity { Collection = r.Collection, Id = r.Id, TenantId = r.TenantId, Data = r.Data, UpdatedAt = now });
             }
+        }
+        // EF eklemeleri anahtar sırasına göre yazabilir; sıra numaraları gönderim sırasıyla burada atanır.
+        if (added.Count > 0)
+        {
+            var seqs = await db.Database.SqlQuery<long>($"SELECT nextval('records_seq') AS \"Value\" FROM generate_series(1, {added.Count})").ToListAsync(ct);
+            seqs.Sort();
+            for (var i = 0; i < added.Count; i++) added[i].Seq = seqs[i];
+            db.Records.AddRange(added);
         }
         await db.SaveChangesAsync(ct);
     }
@@ -67,13 +77,14 @@ public partial class RecordStore
     public async Task<IReadOnlyList<RecordRow>> ListCollectionAsync(string tenantId, string collection, CancellationToken ct) =>
         await db.Records.AsNoTracking()
             .Where(r => r.TenantId == tenantId && r.Collection == collection)
-            .OrderBy(r => r.Id)
+            .OrderBy(r => r.Seq)
             .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<RecordRow>> ListByFieldAsync(string tenantId, string collection, string field, string value, CancellationToken ct) =>
         await db.Records.FromSqlInterpolated($"SELECT * FROM records WHERE tenant_id = {tenantId} AND collection = {collection} AND data ->> {field} = {value}")
             .AsNoTracking()
+            .OrderBy(r => r.Seq)
             .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
             .ToListAsync(ct);
 
