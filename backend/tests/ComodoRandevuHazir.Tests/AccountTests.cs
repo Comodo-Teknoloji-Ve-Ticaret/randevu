@@ -95,6 +95,16 @@ public class DemoResetTests(DemoApp demo, TestApp prod) : IClassFixture<DemoApp>
     }
 
     [Fact]
+    public async Task Last_simulated_email_is_readable_only_in_demo()
+    {
+        await demo.CreateClient().PostAsJsonAsync("/api/dev/reset", Db());
+        await demo.CreateClient().PostAsJsonAsync("/api/auth/forgot", new { email = "lara.owner@demo.randevuhazir.com.tr" });
+        var mail = await demo.CreateClient().GetFromJsonAsync<JsonObject>("/api/dev/emails?to=lara.owner@demo.randevuhazir.com.tr");
+        Assert.Matches(@"\b\d{6}\b", mail!["body"]!.GetValue<string>());
+        Assert.Equal(HttpStatusCode.NotFound, (await prod.CreateClient().GetAsync("/api/dev/emails?to=x@y.z")).StatusCode);
+    }
+
+    [Fact]
     public async Task Reset_is_disabled_by_default() =>
         Assert.Equal(HttpStatusCode.NotFound, (await prod.CreateClient().PostAsJsonAsync("/api/dev/reset", Db())).StatusCode);
 }

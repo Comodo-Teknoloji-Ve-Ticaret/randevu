@@ -705,6 +705,30 @@ const suites = {
       await clickText('Askıya al', '.menu button'); await clickText('Askıya al', '.modal button'); await sleep(300); await expectText('Askıda')
     })
   },
+  async password() {
+    if (!API) return // şifreler yalnız sunucu modunda var
+    await fresh('u_t_lara_rec')
+    await step('Şifre: kullanıcı kendi şifresini değiştirir', async () => {
+      await go('/takvim')
+      await page.click('.sidebar-foot .user-btn'); await clickText('Şifremi değiştir', '.menu button')
+      await fill('Mevcut şifre', 'demo1234'); await fill('Yeni şifre', 'yeni-sifre-123'); await fill('Yeni şifre (tekrar)', 'yeni-sifre-123')
+      await clickText('Kaydet', '.modal button'); await sleep(600); await expectText('Şifreniz değiştirildi')
+      const r = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: demoEmail('u_t_lara_rec'), password: 'yeni-sifre-123' }) })
+      if (!r.ok) throw new Error('yeni şifreyle giriş olmadı')
+    })
+    await step('Şifre: unuttum → e-postaya gelen kodla yenile → giriş', async () => {
+      await asUser(null); await go('/giris')
+      await clickText('Şifremi unuttum', '.login-link')
+      await fill('E-posta', demoEmail('u_t_lara_owner')); await clickText('Kod gönder', '.login-form button'); await sleep(600)
+      await expectText('6 haneli kod')
+      const mail = await (await fetch(API + '/api/dev/emails?to=' + encodeURIComponent(demoEmail('u_t_lara_owner')))).json()
+      const code = mail.body.match(/\b\d{6}\b/)[0]
+      await fill('Kod', code); await fill('Yeni şifre', 'unuttum-12345')
+      await clickText('Şifremi yenile', '.login-form button'); await sleep(600); await expectText('Şifreniz yenilendi')
+      await fill('Şifre', 'unuttum-12345'); await clickText('Giriş yap', '.login-form button'); await sleep(1500)
+      if (!page.url().includes('/takvim')) throw new Error('giriş yapılamadı: ' + page.url())
+    })
+  },
   async booking() {
     await fresh('')
     await step('Online randevu: baştan sona', async () => {

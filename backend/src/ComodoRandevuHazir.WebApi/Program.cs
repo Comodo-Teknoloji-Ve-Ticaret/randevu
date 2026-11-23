@@ -153,6 +153,14 @@ api.MapPost("/dev/reset", async (System.Text.Json.Nodes.JsonObject db, IConfigur
     return Results.Ok(new { imported = await s.ResetDemoAsync(db, ct) });
 });
 
+// Yalnız demo/geliştirme: simülasyonda "gönderilen" son e-posta (şifre sıfırlama kodunu yerelde görmek için)
+api.MapGet("/dev/emails", (string to, IConfiguration config, ComodoRandevuHazir.Infrastructure.Messaging.SimulatedEmailSender mail) =>
+{
+    if (!config.GetValue("Demo:AllowReset", false)) return Results.NotFound();
+    var m = mail.Sent.LastOrDefault(x => x.To.Equals(to.Trim(), StringComparison.OrdinalIgnoreCase));
+    return m is null ? Results.NotFound() : Results.Ok(new { to = m.To, subject = m.Subject, body = m.Body });
+});
+
 // Girişsiz online randevu (müşterinin telefonundan)
 var pub = api.MapGroup("/public/{slug}");
 pub.MapGet("", (string slug, PublicBookingService s, CancellationToken ct) => s.InfoAsync(slug, ct));

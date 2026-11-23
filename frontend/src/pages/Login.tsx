@@ -11,6 +11,7 @@ import { apiMode, demoMode } from '../infrastructure/api'
 import { DEMO_PASSWORD, demoEmail } from '../infrastructure/demoAccounts'
 import { buildSeed } from '../infrastructure/seed'
 import { Avatar, Badge, Button, Field, Input, useToast } from '../ui'
+import { ForgotPassword } from '../ui/PasswordDialogs'
 import './login.css'
 
 const FEATURES = [
@@ -30,6 +31,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [forgot, setForgot] = useState(false)
 
   const signIn = async (mail: string, pass: string) => {
     setBusy(true)
@@ -90,12 +92,19 @@ export default function Login() {
 
       <section className="login-panel">
         <div className="login-panel-inner">
-          {apiMode && (
+          {apiMode && forgot && (
+            <ForgotPassword initialEmail={email} onDone={(mail) => {
+              setForgot(false)
+              if (mail) { setEmail(mail); setPassword(''); toast('Şifreniz yenilendi. Yeni şifrenizle giriş yapın.') }
+            }} />
+          )}
+          {apiMode && !forgot && (
             <form className="login-form" onSubmit={submit}>
               <h2>Giriş yap</h2>
               <Field label="E-posta"><Input icon={Mail} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
               <Field label="Şifre" error={error}><Input icon={KeyRound} type="password" autoComplete="current-password" value={password} invalid={!!error} onChange={(e) => { setPassword(e.target.value); setError(null) }} /></Field>
               <Button variant="primary" size="lg" icon={LogIn} type="submit" disabled={busy || !email.trim() || !password}>{busy ? 'Giriş yapılıyor…' : 'Giriş yap'}</Button>
+              <button type="button" className="login-link" onClick={() => setForgot(true)}>Şifremi unuttum</button>
             </form>
           )}
           {demoMode && <>

@@ -1,8 +1,8 @@
 import {
   BarChart3, Building2, CalendarDays, ChevronDown, Gift, LogOut, MessageSquare, Monitor, Moon, MoreHorizontal,
-  CalendarCheck2, Package, RotateCcw, Scissors, Settings, Sun, TriangleAlert, UserRound, Users, Wallet, type LucideIcon,
+  CalendarCheck2, KeyRound, Package, RotateCcw, Scissors, Settings, Sun, TriangleAlert, UserRound, Users, Wallet, type LucideIcon,
 } from 'lucide-react'
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { ROLE_LABEL, type Perm } from '../app/permissions'
 import { useSession, type ThemePref } from '../app/session'
@@ -13,6 +13,7 @@ import { httpStore, useDbSnapshot, useStore } from '../infrastructure'
 import { apiFetch, apiMode, demoMode } from '../infrastructure/api'
 import { buildSeed } from '../infrastructure/seed'
 import { Avatar, cx, Popover, useConfirm, useToast } from './index'
+import { ChangePasswordDialog } from './PasswordDialogs'
 import './shell.css'
 import '../pages/platform/platform.css'
 
@@ -68,12 +69,14 @@ function Brand() {
 
 function UserMenu() {
   const { user, logout, theme, setTheme } = useSession()
+  const [changingPw, setChangingPw] = useState(false)
   const store = useStore()
   const confirm = useConfirm()
   const toast = useToast()
   const nav = useNavigate()
   if (!user) return null
   return (
+    <>
     <Popover
       trigger={(toggle) => (
         <button className="user-btn" onClick={toggle}>
@@ -118,12 +121,15 @@ function UserMenu() {
           >
             <RotateCcw /> Demo verisini sıfırla
           </button>}
+          {apiMode && <button onClick={() => { close(); setChangingPw(true) }}><KeyRound /> Şifremi değiştir</button>}
           <button onClick={() => { close(); logout(); nav('/giris') }}>
             <LogOut /> Çıkış yap
           </button>
         </>
       )}
     </Popover>
+    {changingPw && <ChangePasswordDialog onClose={() => setChangingPw(false)} />}
+    </>
   )
 }
 
