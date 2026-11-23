@@ -114,7 +114,8 @@ public static class Fixture
         { "id": "cp_old", "tenantId": "t_a", "customerId": "m_a1", "packageDefId": "pd_a", "remaining": { "sv_a": 3 }, "soldOn": "{{DaysAgo(100)}}", "expiresOn": "{{DaysAgo(10)}}" }
       ],
       "customers": [
-        { "id": "m_a1", "tenantId": "t_a", "name": "Elif", "phone": "5321112233" },
+        { "id": "m_a1", "tenantId": "t_a", "name": "Elif", "phone": "5321112233", "consentSms": true },
+        { "id": "m_a2", "tenantId": "t_a", "name": "İzinsiz", "phone": "5321112244", "consentSms": false },
         { "id": "m_b1", "tenantId": "t_b", "name": "Burak", "phone": "5329998877" }
       ]
     }

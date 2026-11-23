@@ -10,6 +10,7 @@ public static class DependencyInjection
         .AddScoped<SyncService>()
         .AddScoped<CashRules>()
         .AddScoped<StockPackageRules>()
+        .AddScoped<MessageRules>()
         .AddScoped<BatchService>()
         .AddScoped<PublicBookingService>();
 }

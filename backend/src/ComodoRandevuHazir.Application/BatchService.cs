@@ -8,7 +8,7 @@ namespace ComodoRandevuHazir.Application;
 /// Ön yüzün değişikliklerini (eklenen/güncellenen/silinen kayıtlar) tek işlemde uygular.
 /// Her kayıt kiracıya bağlanır; rol yetkisi, korunan alanlar ve kiracı içi başvurular doğrulanır.
 /// </summary>
-public partial class BatchService(IRecordStore records, CashRules cash, StockPackageRules stock)
+public partial class BatchService(IRecordStore records, CashRules cash, StockPackageRules stock, MessageRules messages, ISmsSender sms)
 {
     public const int MaxOperations = 5000;
     private const string NoAccess = "Bu kayda erişim yetkiniz yok.";
@@ -25,6 +25,7 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
         ["appointments"] = [("staffId", "staff", "Personel bulunamadı."), ("branchId", "branches", "Şube bulunamadı."), ("customerId", "customers", "Müşteri bulunamadı.")],
         ["blocks"] = [("staffId", "staff", "Personel bulunamadı.")],
         ["colorCards"] = [("customerId", "customers", "Müşteri bulunamadı.")],
+        ["messages"] = [("customerId", "customers", "Müşteri bulunamadı."), ("appointmentId", "appointments", "Randevu bulunamadı.")],
         ["stockMoves"] = [("productId", "products", "Ürün bulunamadı.")],
         ["customerPackages"] = [("customerId", "customers", "Müşteri bulunamadı."), ("packageDefId", "packageDefs", "Paket bulunamadı.")],
     };
@@ -72,11 +73,14 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
         await CheckReferencesAsync(Rows(), ct); // önce "bulunamadı" hataları: en anlaşılır mesaj
         await cash.CheckAsync(who, pending, pendingDeletes, ct); // gün sonu beklenen nakdi burada yazılır
         await stock.CheckAsync(pending, pendingDeletes, ct);
+        var outgoing = await messages.CheckAsync(pending, pendingDeletes, ct); // alıcı numarası burada müşteriden yazılır
         var rows = Rows();
 
         await CheckUniquePhonesAsync(rows, ct);
         await CheckUniqueSlugsAsync(rows, ct);
         await records.ApplyAsync(rows, dels, ct);
+        // Kayıt kesinleştikten sonra gönder: reddedilen bir batch SMS göndermez.
+        foreach (var m in outgoing) await sms.SendAsync(m.To, m.Body, ct);
         return rows.Count + dels.Count;
     }
 

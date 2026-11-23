@@ -52,7 +52,7 @@ public class AuthAndSyncTests(TestApp app) : IClassFixture<TestApp>
         var db = await client.GetFromJsonAsync<JsonElement>("/api/sync");
         Assert.Equal(3, db.GetProperty("version").GetInt32());
         Assert.Equal(["t_a"], db.GetProperty("tenants").EnumerateArray().Select(t => t.GetProperty("id").GetString()));
-        Assert.Equal(["m_a1"], db.GetProperty("customers").EnumerateArray().Select(t => t.GetProperty("id").GetString()));
+        Assert.Equal(["m_a1", "m_a2"], db.GetProperty("customers").EnumerateArray().Select(t => t.GetProperty("id").GetString()));
         Assert.Equal(["u_a_owner", "u_a_rec", "u_a_staff"], db.GetProperty("users").EnumerateArray().Select(t => t.GetProperty("id").GetString()));
         Assert.Equal(0, db.GetProperty("appointments").GetArrayLength()); // boş koleksiyonlar da gelir
         Assert.Equal("Elif", db.GetProperty("customers")[0].GetProperty("name").GetString());
@@ -64,6 +64,6 @@ public class AuthAndSyncTests(TestApp app) : IClassFixture<TestApp>
         var client = await app.LoginAsync("platform@test.local");
         var db = await client.GetFromJsonAsync<JsonElement>("/api/sync");
         Assert.Equal(4, db.GetProperty("tenants").GetArrayLength());
-        Assert.Equal(2, db.GetProperty("customers").GetArrayLength());
+        Assert.Equal(3, db.GetProperty("customers").GetArrayLength());
     }
 }

@@ -1,4 +1,5 @@
 using ComodoRandevuHazir.Application;
+using ComodoRandevuHazir.Infrastructure.Messaging;
 using ComodoRandevuHazir.Infrastructure.Persistence;
 using ComodoRandevuHazir.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -19,5 +20,7 @@ public static class DependencyInjection
         .AddSingleton<IPasswordHasher, PasswordHasher>()
         .AddSingleton<ITokenIssuer, JwtTokenIssuer>()
         .AddScoped<IRecordStore, RecordStore>()
-        .AddScoped<ICredentialStore, CredentialStore>();
+        .AddScoped<ICredentialStore, CredentialStore>()
+        // Gerçek sağlayıcı (Netgsm/İleti Merkezi) hesabı açıldığında Sms:Provider ayarıyla seçilecek.
+        .AddSingleton<ISmsSender, SimulatedSmsSender>();
 }

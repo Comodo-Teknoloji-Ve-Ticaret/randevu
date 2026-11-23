@@ -61,3 +61,11 @@ public record BatchUpsert(string Collection, System.Text.Json.Nodes.JsonObject D
 public record BatchDelete(string Collection, string Id);
 public record BatchRequest(List<BatchUpsert>? Upserts, List<BatchDelete>? Deletes);
 public record RecordKey(string Collection, string Id);
+
+/// <summary>SMS sağlayıcısı (Netgsm, İleti Merkezi…). Varsayılan: simülasyon — gerçek gönderim yapılmaz.</summary>
+public interface ISmsSender
+{
+    /// <summary>Mesaj kaydına yazılan durum: simülasyonda "simulated".</summary>
+    string LogStatus { get; }
+    Task SendAsync(string to, string body, CancellationToken ct);
+}
