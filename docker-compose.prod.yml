@@ -1,0 +1,30 @@
+# Gerçek sunucu: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Önce .env dosyasını doldurun (bkz. .env.example ve docs/deploy.md).
+services:
+  db:
+    ports: !reset []            # veritabanı dışarı açılmaz
+  api:
+    ports: !reset []            # API yalnız Caddy üzerinden erişilir
+    environment:
+      Proxy__Trusted: "true"    # gerçek istemci adresi Caddy'den (istek sınırı için)
+      Cors__Origins__0: https://${DOMAIN:?DOMAIN gerekli}
+      Admin__Email: ${ADMIN_EMAIL:?ADMIN_EMAIL gerekli}
+      Admin__Password: ${ADMIN_PASSWORD:?ADMIN_PASSWORD gerekli}
+      Demo__AllowReset: "false"
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: https://${DOMAIN}
+    restart: unless-stopped
+    depends_on: [api]
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddydata:/data         # HTTPS sertifikaları
+
+volumes:
+  caddydata:

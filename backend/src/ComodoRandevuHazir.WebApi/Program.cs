@@ -5,6 +5,7 @@ using ComodoRandevuHazir.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -48,6 +49,20 @@ if (app.Configuration.GetValue("Database:Migrate", true))
 {
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+    // İlk Comodo yönetici hesabı (yalnız ayarlanmışsa; mevcut hesaba dokunmaz)
+    if (app.Configuration["Admin:Email"] is { Length: > 0 } adminEmail)
+        await scope.ServiceProvider.GetRequiredService<AccountService>()
+            .EnsurePlatformAdminAsync(adminEmail, app.Configuration["Admin:Password"] ?? "", CancellationToken.None);
+}
+
+// HTTPS için önde ters vekil (Caddy/Nginx) varsa gerçek istemci adresi X-Forwarded-For'dan alınır.
+// Yalnız API doğrudan internete açık DEĞİLKEN açın (aksi hâlde başlık taklit edilebilir).
+if (app.Configuration.GetValue("Proxy:Trusted", false))
+{
+    var fwd = new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto };
+    fwd.KnownIPNetworks.Clear();
+    fwd.KnownProxies.Clear();
+    app.UseForwardedHeaders(fwd);
 }
 
 // Uygulama hatalarını RFC 7807 ProblemDetails'e çevir (başlık Türkçe, kullanıcıya gösterilebilir).

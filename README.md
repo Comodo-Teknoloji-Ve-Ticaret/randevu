@@ -31,14 +31,20 @@ Comodo'nun kuaförlere sattığı çok kiracılı (çok salonlu) salon yönetim 
 frontend/   React 19 + TypeScript + Vite
   src/domain/          Saf kurallar: müsaitlik/çakışma, adisyon toplamları, prim, telefon, para, tarih (testli)
   src/application/     Repository arayüzleri ve servisler: randevu, müşteri, kasa, stok, mesaj, online randevu, rapor, platform (testli)
-  src/infrastructure/  localStorage deposu, demo verisi (2 salon, 3 şube), React sağlayıcıları
+  src/infrastructure/  localStorage deposu ya da sunucu deposu (HttpStore), API istemcisi, demo verisi, React sağlayıcıları
   src/ui/              Ortak bileşenler, kabuk, grafikler, tema değişkenleri
   src/pages/           Ekranlar
-backend/    .NET Clean Architecture (frontend onayından sonra)
-docs/superpowers/      Tasarım dokümanı ve uygulama planı
+backend/    .NET 10 Clean Architecture + PostgreSQL
+  src/ComodoRandevuHazir.Domain/          Lisans, müsaitlik, para, telefon, rol tablosu (ön yüzle birebir)
+  src/ComodoRandevuHazir.Application/     Giriş, senkron, işlemsel kayıt (yetki + kasa/stok/paket/mesaj kuralları), online randevu, davet
+  src/ComodoRandevuHazir.Infrastructure/  EF Core + Npgsql, şifre özeti, JWT, SMS sağlayıcı (şimdilik simülasyon)
+  src/ComodoRandevuHazir.WebApi/          Minimal API uç noktaları
+  tests/                                   xUnit; gerçek PostgreSQL'e karşı (her test sınıfı kendi geçici veritabanı)
+docs/deploy.md         Sunucuya kurulum, taşıma, yedekleme
+docs/superpowers/      Tasarım dokümanları ve uygulama planları
 ```
 
-Tüm veri erişimi `Repos` arayüzünden geçer; her kayıt `tenantId` taşır ve bir salon başka salonun verisini göremez. Backend aşamasında aynı arayüzün HTTP implementasyonu takılacak.
+Tüm veri erişimi `Repos` arayüzünden geçer; her kayıt `tenantId` taşır ve bir salon başka salonun verisini göremez. `VITE_API_URL` tanımlıysa aynı arayüzün altında sunucu deposu çalışır: ekranlar ve servisler değişmez, aynı anda yapılan değişiklikler tek işlemsel istekte gönderilir, sunucu her kaydı kiracıya bağlar ve kuralları doğrular; reddederse ekran eski hâline döner.
 
 Para tutarları kuruş (tam sayı), saatler gün içi dakika, tarihler `YYYY-MM-DD` (Europe/Istanbul) olarak tutulur.
 
@@ -54,3 +60,14 @@ npm run build    # üretim derlemesi (frontend/dist)
 ```
 
 Demo verisi tarayıcıda (`localStorage`) saklanır; kullanıcı menüsündeki **Demo verisini sıfırla** ile yenilenir. Eski demo verisi açılışta haftalık adımlarla bugüne kaydırılır.
+
+### Sunucu ile (backend)
+
+```bash
+docker compose up -d                       # PostgreSQL + API (http://localhost:8080); .env'de DEMO_ALLOW_RESET=true
+cd frontend && npm run seed:api            # demo verisi (hesaplar: …@demo.randevuhazir.com.tr / demo1234)
+VITE_API_URL=http://localhost:8080 VITE_DEMO=true npx vite --port 5318
+cd ../backend && dotnet test               # backend testleri (docker compose'daki veritabanını kullanır)
+```
+
+Gerçek sunucuya kurulum, veri taşıma ve yedekleme: **[docs/deploy.md](docs/deploy.md)**.

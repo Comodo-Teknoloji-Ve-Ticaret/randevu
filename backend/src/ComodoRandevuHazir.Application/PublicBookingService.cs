@@ -98,7 +98,7 @@ public class PublicBookingService(IRecordStore records, IClock clock)
 
         var all = candidates.SelectMany(s => Availability.FindSlots(new SlotQuery(date,
             serviceIds.Sum(id => DurationFor(services[id], Str(s, "id")!)),
-            [new StaffAvailability(Str(s, "id")!, true, Hours(s["hours"]))], busy, Hours(branch["hours"]), today, clock.NowMinutes, salon.MinLeadMinutes)));
+            [new StaffAvailability(Str(s, "id")!, true, Hours(s["hours"]) ?? new WeekHours(new DayHours?[7]))], busy, Hours(branch["hours"]), today, clock.NowMinutes, salon.MinLeadMinutes)));
 
         // "Fark etmez": her saatte o gün en az randevusu olan personel öne alınır.
         var load = candidates.ToDictionary(s => Str(s, "id")!, s => appts.Count(a => Str(a, "staffId") == Str(s, "id")));

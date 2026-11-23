@@ -81,6 +81,22 @@ public class AccountService(IRecordStore records, ICredentialStore credentials, 
         return await credentials.EmailsAsync([.. users.Select(u => u.Id)], ct);
     }
 
+    public const string AdminUserId = "u_comodo_admin";
+
+    /// <summary>Gerçek kurulumda ilk Comodo yönetici hesabı (Admin:Email / Admin:Password). Hesap varsa dokunulmaz.</summary>
+    public async Task EnsurePlatformAdminAsync(string email, string password, CancellationToken ct)
+    {
+        var normalized = ValidEmail(email);
+        ValidPassword(password);
+        if (await credentials.FindByEmailAsync(normalized, ct) is not null) return;
+        if (await records.GetAsync("users", AdminUserId, ct) is null)
+        {
+            var user = new JsonObject { ["id"] = AdminUserId, ["tenantId"] = null, ["name"] = "Comodo Yönetici", ["role"] = "platform", ["branchIds"] = new JsonArray() };
+            await records.ApplyAsync([new RecordRow("users", AdminUserId, null, user.ToJsonString())], [], ct);
+        }
+        await credentials.SetAsync(new Credential(AdminUserId, normalized, hasher.Hash(password)), ct);
+    }
+
     /// <summary>Tüm veriyi siler, verilen demo verisini yükler; her kullanıcıya demo e-postası ve şifresi atanır.</summary>
     public async Task<int> ResetDemoAsync(JsonObject db, CancellationToken ct)
     {
