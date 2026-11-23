@@ -208,7 +208,7 @@ export function buildSeed(today: string, nowMin = 690): DB {
   db.seededFor = today
   let seq = 0
   const id = (p: string) => `${p}${(++seq).toString(36)}`
-  const code = () => 'MK-' + Math.floor(r.next() * 36 ** 6).toString(36).toUpperCase().padStart(6, '0')
+  const code = () => 'RH-' + Math.floor(r.next() * 36 ** 6).toString(36).toUpperCase().padStart(6, '0')
   const iso = (date: string, min: number) => `${date}T${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}:00+03:00`
 
   db.users.push({ id: 'u_platform', tenantId: null, name: 'Comodo Yönetici', role: 'platform', branchIds: [] })

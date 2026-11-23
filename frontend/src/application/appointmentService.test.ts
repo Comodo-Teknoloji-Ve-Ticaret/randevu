@@ -11,7 +11,7 @@ describe('appointmentService', () => {
     const { appt, conflicts } = svc.create({ branchId: 'b1', staffId: 's2', customerId: 'm1', date: '2026-11-20', start: 600, serviceIds: ['sv1', 'sv2'] })
     expect(appt.end).toBe(660)
     expect(appt.items.map((i) => i.price)).toEqual([50000, 30000])
-    expect(appt.code).toMatch(/^MK-[0-9A-Z]{6}$/)
+    expect(appt.code).toMatch(/^RH-[0-9A-Z]{6}$/)
     expect(conflicts).toEqual([])
   })
   it('move saves even on conflict but reports it', () => {

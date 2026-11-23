@@ -81,6 +81,17 @@ public class BatchTests(TestApp app) : IClassFixture<TestApp>
     }
 
     [Fact]
+    public async Task Online_booking_address_must_be_unique()
+    {
+        var c = await app.LoginAsync("ayse@test.local");
+        var t = (await Find(c, "tenants", "t_a"))!;
+        t["slug"] = "salon-b";
+        await AssertStatus(HttpStatusCode.Conflict, Batch(c, [Up("tenants", t)]), "Bu online randevu adresi");
+        t["slug"] = "salon-a-yeni";
+        await AssertStatus(HttpStatusCode.OK, Batch(c, [Up("tenants", t)]));
+    }
+
+    [Fact]
     public async Task Reception_may_add_brands_but_not_rename_salon()
     {
         var c = await app.LoginAsync("resepsiyon@test.local");

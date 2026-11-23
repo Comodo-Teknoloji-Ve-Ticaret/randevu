@@ -3,7 +3,9 @@ using ComodoRandevuHazir.Infrastructure;
 using ComodoRandevuHazir.Infrastructure.Persistence;
 using ComodoRandevuHazir.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -30,6 +32,16 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
 });
 builder.Services.AddAuthorization();
 
+// Online randevu herkese açık: aynı istemciden dakikada en fazla N kayıt (varsayılan 20).
+builder.Services.AddRateLimiter(_ => { });
+builder.Services.AddOptions<RateLimiterOptions>().Configure<IConfiguration>((o, config) =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.AddPolicy("booking", http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = config.GetValue("RateLimit:BookPerMinute", 20), Window = TimeSpan.FromMinutes(1) }));
+});
+
 var app = builder.Build();
 
 if (app.Configuration.GetValue("Database:Migrate", true))
@@ -48,6 +60,7 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async ctx =>
         UnauthorizedException u => (StatusCodes.Status401Unauthorized, u.Message),
         ForbiddenException f => (StatusCodes.Status403Forbidden, f.Message),
         NotFoundException n => (StatusCodes.Status404NotFound, n.Message),
+        ConflictException c => (StatusCodes.Status409Conflict, c.Message),
         _ => (StatusCodes.Status500InternalServerError, "Beklenmeyen bir hata oluştu."),
     };
     ctx.Response.StatusCode = status;
@@ -56,6 +69,7 @@ app.UseExceptionHandler(errorApp => errorApp.Run(async ctx =>
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 var api = app.MapGroup("/api");
 
@@ -78,6 +92,14 @@ api.MapPost("/batch", async (BatchRequest req, HttpContext http, BatchService ba
     var who = JwtTokenIssuer.Read(http.User) ?? throw new UnauthorizedException("Oturum geçersiz.");
     return Results.Ok(new { applied = await batch.ApplyAsync(who, req, ct) });
 }).RequireAuthorization();
+
+// Girişsiz online randevu (müşterinin telefonundan)
+var pub = api.MapGroup("/public/{slug}");
+pub.MapGet("", (string slug, PublicBookingService s, CancellationToken ct) => s.InfoAsync(slug, ct));
+pub.MapGet("/slots", (string slug, string branchId, string serviceIds, string? staffId, string date, PublicBookingService s, CancellationToken ct) =>
+    s.SlotsAsync(slug, branchId, serviceIds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), staffId ?? "any", date, ct));
+pub.MapPost("/book", (string slug, BookingRequest req, PublicBookingService s, CancellationToken ct) => s.BookAsync(slug, req, ct))
+   .RequireRateLimiting("booking");
 
 app.Run();
 

@@ -53,14 +53,43 @@ public partial class RecordStore
 
     public async Task ApplyAsync(IReadOnlyCollection<RecordRow> upserts, IReadOnlyCollection<RecordKey> deletes, CancellationToken ct)
     {
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var own = db.Database.CurrentTransaction is null; // InLockAsync içindeyse onun işlemi kullanılır
+        await using var tx = own ? await db.Database.BeginTransactionAsync(ct) : null;
         if (upserts.Count > 0) await UpsertManyAsync(upserts, ct);
         foreach (var group in deletes.GroupBy(k => k.Collection))
         {
             var ids = group.Select(k => k.Id).Distinct().ToList();
             await db.Records.Where(r => r.Collection == group.Key && ids.Contains(r.Id)).ExecuteDeleteAsync(ct);
         }
+        if (tx is not null) await tx.CommitAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<RecordRow>> ListCollectionAsync(string tenantId, string collection, CancellationToken ct) =>
+        await db.Records.AsNoTracking()
+            .Where(r => r.TenantId == tenantId && r.Collection == collection)
+            .OrderBy(r => r.Id)
+            .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<RecordRow>> ListByFieldAsync(string tenantId, string collection, string field, string value, CancellationToken ct) =>
+        await db.Records.FromSqlInterpolated($"SELECT * FROM records WHERE tenant_id = {tenantId} AND collection = {collection} AND data ->> {field} = {value}")
+            .AsNoTracking()
+            .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
+            .ToListAsync(ct);
+
+    public async Task<RecordRow?> FindTenantBySlugAsync(string slug, CancellationToken ct) =>
+        await db.Records.FromSqlInterpolated($"SELECT * FROM records WHERE collection = 'tenants' AND data ->> 'slug' = {slug}")
+            .AsNoTracking()
+            .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
+            .FirstOrDefaultAsync(ct);
+
+    public async Task<T> InLockAsync<T>(string key, Func<Task<T>> body, CancellationToken ct)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtext({key}))", ct);
+        var result = await body();
         await tx.CommitAsync(ct);
+        return result;
     }
 }
 

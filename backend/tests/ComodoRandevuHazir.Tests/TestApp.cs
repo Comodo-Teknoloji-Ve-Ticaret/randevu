@@ -15,7 +15,7 @@ namespace ComodoRandevuHazir.Tests;
 /// Her test sınıfı için gerçek PostgreSQL'de ayrı, geçici bir veritabanı açan uygulama.
 /// Sunucu: TEST_DB ortam değişkeni ya da docker compose'daki yerel veritabanı.
 /// </summary>
-public sealed class TestApp : WebApplicationFactory<Program>, IAsyncLifetime
+public class TestApp : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public static readonly string ServerConn = Environment.GetEnvironmentVariable("TEST_DB")
         ?? "Host=localhost;Port=5432;Username=randevuhazir;Password=randevuhazir;Database=postgres";
@@ -25,14 +25,19 @@ public sealed class TestApp : WebApplicationFactory<Program>, IAsyncLifetime
 
     public string ConnectionString => new NpgsqlConnectionStringBuilder(ServerConn) { Database = _dbName }.ConnectionString;
 
+    /// <summary>Alt sınıflar ek ayar verebilir (ör. düşük istek sınırı).</summary>
+    protected virtual IDictionary<string, string?> ExtraSettings => new Dictionary<string, string?>();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
-        builder.ConfigureAppConfiguration(c => c.AddInMemoryCollection(new Dictionary<string, string?>
+        var settings = new Dictionary<string, string?>
         {
             ["ConnectionStrings:Db"] = ConnectionString,
             ["Jwt:Key"] = "test-anahtari-test-anahtari-test-anahtari-0123456789",
-        }));
+        };
+        foreach (var (k, v) in ExtraSettings) settings[k] = v;
+        builder.ConfigureAppConfiguration(c => c.AddInMemoryCollection(settings));
     }
 
     public async Task InitializeAsync()
@@ -66,19 +71,23 @@ public sealed class TestApp : WebApplicationFactory<Program>, IAsyncLifetime
 public static class Fixture
 {
     public static string Today => DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).ToString("yyyy-MM-dd");
+    /// <summary>Her gün 09:00–18:00.</summary>
+    public const string Hours = """{"0":{"open":540,"close":1080},"1":{"open":540,"close":1080},"2":{"open":540,"close":1080},"3":{"open":540,"close":1080},"4":{"open":540,"close":1080},"5":{"open":540,"close":1080},"6":{"open":540,"close":1080}}""";
+    public static string Tomorrow => DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).AddDays(1).ToString("yyyy-MM-dd");
     public static string DaysAgo(int n) => DateOnly.FromDateTime(DateTime.UtcNow.AddHours(3)).AddDays(-n).ToString("yyyy-MM-dd");
 
     public static JsonObject Db() => JsonNode.Parse($$"""
     {
       "version": 3,
       "tenants": [
-        { "id": "t_a", "name": "Salon A", "slug": "salon-a", "status": "active", "license": { "start": "{{Today}}", "days": 30 }, "brands": [], "plan": "pro" },
+        { "id": "t_a", "name": "Salon A", "slug": "salon-a", "status": "active", "license": { "start": "{{Today}}", "days": 30 }, "brands": [], "plan": "pro", "logoColor": "#6c5ce7",
+          "onlineBooking": { "enabled": true, "requireApproval": true, "maxDaysAhead": 30, "minLeadMinutes": 60 } },
         { "id": "t_b", "name": "Salon B", "slug": "salon-b", "status": "active", "license": { "start": "{{Today}}", "days": 30 } },
         { "id": "t_old", "name": "Eski Salon", "slug": "eski", "status": "active", "license": { "start": "{{DaysAgo(40)}}", "days": 30 } },
         { "id": "t_off", "name": "Askıda", "slug": "askida", "status": "suspended", "license": { "start": "{{Today}}", "days": 30 } }
       ],
       "branches": [
-        { "id": "b_a", "tenantId": "t_a", "name": "A Merkez" },
+        { "id": "b_a", "tenantId": "t_a", "name": "A Merkez", "address": "Lara", "phone": "2420000000", "hours": {{Hours}} },
         { "id": "b_b", "tenantId": "t_b", "name": "B Merkez" }
       ],
       "users": [
@@ -91,11 +100,11 @@ public static class Fixture
         { "id": "u_a_staff", "tenantId": "t_a", "name": "Personel", "role": "staff", "staffId": "s_a1", "branchIds": ["b_a"] }
       ],
       "staff": [
-        { "id": "s_a1", "tenantId": "t_a", "branchId": "b_a", "name": "Sena", "serviceIds": [], "serviceCommission": 30 },
-        { "id": "s_a2", "tenantId": "t_a", "branchId": "b_a", "name": "Deniz", "serviceIds": [], "serviceCommission": 30 }
+        { "id": "s_a1", "tenantId": "t_a", "branchId": "b_a", "name": "Sena", "title": "Kuaför", "color": "#e17055", "phone": "5551112233", "active": true, "hours": {{Hours}}, "serviceIds": ["sv_a"], "serviceCommission": 30 },
+        { "id": "s_a2", "tenantId": "t_a", "branchId": "b_a", "name": "Deniz", "active": true, "hours": {{Hours}}, "serviceIds": [], "serviceCommission": 30 }
       ],
       "categories": [ { "id": "c_a", "tenantId": "t_a", "name": "Kesim", "color": "kesim", "order": 0 } ],
-      "services": [ { "id": "sv_a", "tenantId": "t_a", "categoryId": "c_a", "name": "Kesim", "duration": 30, "price": 50000 } ],
+      "services": [ { "id": "sv_a", "tenantId": "t_a", "categoryId": "c_a", "name": "Kesim", "duration": 30, "price": 50000, "online": true, "overrides": {} } ],
       "customers": [
         { "id": "m_a1", "tenantId": "t_a", "name": "Elif", "phone": "5321112233" },
         { "id": "m_b1", "tenantId": "t_b", "name": "Burak", "phone": "5329998877" }

@@ -8,7 +8,7 @@ export type Clock = () => { date: string; min: number }
 export const istanbulClock: Clock = () => ({ date: todayIstanbul(), min: nowMinutesIstanbul() })
 
 export function newCode(): string {
-  return 'MK-' + Math.floor(Math.random() * 36 ** 6).toString(36).toUpperCase().padStart(6, '0')
+  return 'RH-' + Math.floor(Math.random() * 36 ** 6).toString(36).toUpperCase().padStart(6, '0')
 }
 
 export const priceFor = (s: Service, staffId?: ID) => (staffId && s.overrides[staffId]?.price) || s.price

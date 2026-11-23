@@ -19,6 +19,12 @@ public interface IRecordStore
     Task<IReadOnlyList<RecordRow>> GetManyAsync(IReadOnlyCollection<RecordKey> keys, CancellationToken ct);
     /// <summary>Tümü tek işlemde uygulanır; biri başarısızsa hiçbiri yazılmaz.</summary>
     Task ApplyAsync(IReadOnlyCollection<RecordRow> upserts, IReadOnlyCollection<RecordKey> deletes, CancellationToken ct);
+    Task<IReadOnlyList<RecordRow>> ListCollectionAsync(string tenantId, string collection, CancellationToken ct);
+    /// <summary>Kiracının bir koleksiyonunda üst düzey metin alanı eşleşen kayıtlar (ör. tarih, telefon).</summary>
+    Task<IReadOnlyList<RecordRow>> ListByFieldAsync(string tenantId, string collection, string field, string value, CancellationToken ct);
+    Task<RecordRow?> FindTenantBySlugAsync(string slug, CancellationToken ct);
+    /// <summary>Aynı anahtarla gelen işlemleri sıraya sokar (ör. aynı gün için eşzamanlı online randevu).</summary>
+    Task<T> InLockAsync<T>(string key, Func<Task<T>> body, CancellationToken ct);
 }
 
 public interface ICredentialStore
@@ -41,12 +47,15 @@ public interface ITokenIssuer
 public interface IClock
 {
     DateOnly Today { get; }
+    /// <summary>İstanbul saatiyle gün içi dakika.</summary>
+    int NowMinutes { get; }
 }
 
 public class ValidationException(string message) : Exception(message);
 public class UnauthorizedException(string message) : Exception(message);
 public class ForbiddenException(string message) : Exception(message);
 public class NotFoundException(string message) : Exception(message);
+public class ConflictException(string message) : Exception(message);
 
 public record BatchUpsert(string Collection, System.Text.Json.Nodes.JsonObject Data);
 public record BatchDelete(string Collection, string Id);

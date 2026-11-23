@@ -22,6 +22,9 @@ public partial class BatchService(IRecordStore records)
     {
         ["services"] = [("categoryId", "categories", "Kategori bulunamadı.")],
         ["staff"] = [("branchId", "branches", "Şube bulunamadı.")],
+        ["appointments"] = [("staffId", "staff", "Personel bulunamadı."), ("branchId", "branches", "Şube bulunamadı."), ("customerId", "customers", "Müşteri bulunamadı.")],
+        ["blocks"] = [("staffId", "staff", "Personel bulunamadı.")],
+        ["colorCards"] = [("customerId", "customers", "Müşteri bulunamadı.")],
     };
 
     public async Task<int> ApplyAsync(Identity who, BatchRequest req, CancellationToken ct)
@@ -46,6 +49,7 @@ public partial class BatchService(IRecordStore records)
             var oldData = old is null ? null : JsonNode.Parse(old.Data)!.AsObject();
             var tenantId = platform ? PlatformTenant(collection, id, data) : ScopeToCaller(who.TenantId!, collection, id, data, old);
             if (!platform) Authorize(who, myStaffId, collection, data, oldData);
+            RecordRules.Validate(collection, data);
             rows.Add(new RecordRow(collection, id, tenantId, data.ToJsonString()));
         }
         foreach (var key in dels)
@@ -58,6 +62,8 @@ public partial class BatchService(IRecordStore records)
         }
 
         await CheckReferencesAsync(rows, ct);
+        await CheckUniquePhonesAsync(rows, ct);
+        await CheckUniqueSlugsAsync(rows, ct);
         await records.ApplyAsync(rows, dels, ct);
         return rows.Count + dels.Count;
     }
@@ -141,6 +147,27 @@ public partial class BatchService(IRecordStore records)
         if (old is null || data is null) return [.. (old ?? data ?? []).Select(p => p.Key).Where(k => k != "tenantId")];
         var keys = old.Select(p => p.Key).Union(data.Select(p => p.Key)).Where(k => k != "tenantId");
         return [.. keys.Where(k => !JsonNode.DeepEquals(old[k], data[k]))];
+    }
+
+    /// <summary>Bir salonda aynı telefonla iki müşteri olmaz (ön yüz de aynı kuralı uygular; eşzamanlı kayıtlara karşı sunucu güvencesi).</summary>
+    private async Task CheckUniquePhonesAsync(List<RecordRow> rows, CancellationToken ct)
+    {
+        var customers = rows.Where(r => r.Collection == "customers")
+            .Select(r => (r.Id, r.TenantId, Phone: JsonNode.Parse(r.Data)?["phone"] is JsonValue v && v.TryGetValue<string>(out var p) && p.Length > 0 ? p : null))
+            .Where(x => x.Phone is not null && x.TenantId is not null).ToList();
+        foreach (var dup in customers.GroupBy(c => (c.TenantId, c.Phone)).Where(g => g.Count() > 1))
+            throw new ConflictException("Bu telefonla kayıtlı bir müşteri zaten var.");
+        foreach (var (id, tenantId, phone) in customers)
+            if ((await records.ListByFieldAsync(tenantId!, "customers", "phone", phone!, ct)).Any(r => r.Id != id))
+                throw new ConflictException("Bu telefonla kayıtlı bir müşteri zaten var.");
+    }
+
+    private async Task CheckUniqueSlugsAsync(List<RecordRow> rows, CancellationToken ct)
+    {
+        foreach (var r in rows.Where(r => r.Collection == "tenants"))
+            if (JsonNode.Parse(r.Data)?["slug"] is JsonValue v && v.TryGetValue<string>(out var slug) && slug.Length > 0
+                && await records.FindTenantBySlugAsync(slug, ct) is { } other && other.Id != r.Id)
+                throw new ConflictException("Bu online randevu adresi başka bir salon tarafından kullanılıyor.");
     }
 
     private async Task CheckReferencesAsync(List<RecordRow> rows, CancellationToken ct)

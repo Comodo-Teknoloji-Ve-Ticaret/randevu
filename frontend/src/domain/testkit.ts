@@ -16,7 +16,7 @@ export function mkStaff(p: Partial<Staff> = {}): Staff {
 export function mkAppt(p: Partial<Appointment> = {}): Appointment {
   return {
     id: 'a1', tenantId: 't1', branchId: 'b1', staffId: 's1', customerId: null, date: '2026-11-20',
-    start: 600, end: 660, items: [], status: 'confirmed', source: 'reception', note: '', code: 'MK-000001',
+    start: 600, end: 660, items: [], status: 'confirmed', source: 'reception', note: '', code: 'RH-000001',
     createdAt: '2026-11-01T00:00:00Z', ...p,
   }
 }

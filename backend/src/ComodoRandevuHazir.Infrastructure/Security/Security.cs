@@ -68,5 +68,7 @@ public class JwtTokenIssuer(JwtOptions options, TimeProvider time) : ITokenIssue
 /// <summary>İstanbul 2016'dan beri sabit UTC+3 (yaz saati yok).</summary>
 public class IstanbulClock(TimeProvider time) : IClock
 {
-    public DateOnly Today => DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime.AddHours(3));
+    private DateTime Now => time.GetUtcNow().UtcDateTime.AddHours(3);
+    public DateOnly Today => DateOnly.FromDateTime(Now);
+    public int NowMinutes => Now.Hour * 60 + Now.Minute;
 }
