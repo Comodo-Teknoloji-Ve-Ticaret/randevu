@@ -1,11 +1,13 @@
 import { Building2, Copy, CreditCard, Landmark, ExternalLink, Globe, Monitor, Moon, Palette, Plus, Sun, UserPlus, Users } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { newId } from '../../application/db'
 import { platformService, slugify } from '../../application/platformService'
 import { ROLE_LABEL } from '../../app/permissions'
 import { useSession } from '../../app/session'
 import { formatPhone } from '../../domain/phone'
 import type { Branch, Role, User } from '../../domain/types'
-import { useRepos, useStore } from '../../infrastructure'
+import { httpStore, useRepos, useStore } from '../../infrastructure'
+import { apiFetch, apiMode } from '../../infrastructure/api'
 import { Avatar, Badge, Button, cx, Drawer, Field, Input, PageHeader, Select, Switch, useToast } from '../../ui'
 import { HoursEditor } from '../staff/StaffPage'
 import '../staff/staff.css'
@@ -193,6 +195,12 @@ function UsersSection() {
   const { user: me } = useSession()
   const [edit, setEdit] = useState<User | 'new' | null>(null)
   const users = repos.users.list()
+  // Sunucu modu: kullanıcıların giriş e-postaları (şifreler asla gelmez)
+  const [emails, setEmails] = useState<Record<string, string>>({})
+  const [emailsVersion, setEmailsVersion] = useState(0)
+  useEffect(() => {
+    if (apiMode) apiFetch<Record<string, string>>('/api/users/emails').then(setEmails).catch(() => setEmails({}))
+  }, [emailsVersion])
   return (
     <div className="card">
       <div className="card-head"><h3>Kullanıcılar & roller</h3><Button size="sm" icon={UserPlus} onClick={() => setEdit('new')}>Kullanıcı ekle</Button></div>
@@ -205,34 +213,58 @@ function UsersSection() {
         {users.map((u) => (
           <div key={u.id} className="list-item clickable" onClick={() => setEdit(u)}>
             <Avatar name={u.name} size={34} />
-            <div style={{ flex: 1 }}><div className="t-strong">{u.name}{u.id === me?.id && <span className="muted t-small"> (siz)</span>}</div><div className="t-small muted">{u.branchIds.map((b) => repos.branches.get(b)?.name).join(', ')}</div></div>
+            <div style={{ flex: 1 }}><div className="t-strong">{u.name}{u.id === me?.id && <span className="muted t-small"> (siz)</span>}</div><div className="t-small muted">{u.branchIds.map((b) => repos.branches.get(b)?.name).join(', ')}{apiMode && <> · {emails[u.id] ?? <span style={{ color: 'var(--warning)' }}>giriş bilgisi yok</span>}</>}</div></div>
             <Badge tone={u.role === 'owner' ? 'accent' : u.role === 'reception' ? 'info' : 'neutral'}>{ROLE_LABEL[u.role]}</Badge>
           </div>
         ))}
       </div>
-      {edit && <UserEditor user={edit === 'new' ? undefined : edit} onClose={() => setEdit(null)} onSaved={() => { toast('Kullanıcı kaydedildi'); setEdit(null) }} />}
+      {edit && <UserEditor user={edit === 'new' ? undefined : edit} email={edit === 'new' ? '' : emails[edit.id] ?? ''} onClose={() => setEdit(null)} onSaved={() => { toast('Kullanıcı kaydedildi'); setEdit(null); setEmailsVersion((v) => v + 1) }} />}
     </div>
   )
 }
 
-function UserEditor({ user, onClose, onSaved }: { user?: User; onClose: () => void; onSaved: () => void }) {
+function UserEditor({ user, email, onClose, onSaved }: { user?: User; email: string; onClose: () => void; onSaved: () => void }) {
   const repos = useRepos()
+  const toast = useToast()
   const { user: me } = useSession()
   const branches = repos.branches.list()
   const staff = repos.staff.list({ active: true })
-  const [f, setF] = useState({ name: user?.name ?? '', role: (user?.role ?? 'reception') as Exclude<Role, 'platform'>, staffId: user?.staffId ?? '', branchIds: user?.branchIds ?? branches.map((b) => b.id) })
+  const [f, setF] = useState({ name: user?.name ?? '', role: (user?.role ?? 'reception') as Exclude<Role, 'platform'>, staffId: user?.staffId ?? '', branchIds: user?.branchIds ?? branches.map((b) => b.id), email, password: '' })
+  const [busy, setBusy] = useState(false)
   const isMe = user?.id === me?.id
+  // Sunucu modu: e-posta değişti ya da şifre yazıldıysa giriş bilgisi güncellenir (ikisi birlikte gerekir).
+  const loginChange = apiMode && (f.password !== '' || (f.email.trim() !== email && f.email.trim() !== ''))
+  const loginInvalid = loginChange && (!f.email.includes('@') || f.password.length < 8)
+
+  const save = async () => {
+    const saved = repos.users.upsert({ ...user, id: user?.id ?? newId('u_'), name: f.name.trim(), role: f.role, staffId: f.staffId || undefined, branchIds: f.branchIds })
+    if (!loginChange) { onSaved(); return }
+    setBusy(true)
+    try {
+      await httpStore().settled() // kullanıcı önce sunucuya yazılmalı
+      await apiFetch(`/api/users/${saved.id}/credentials`, { body: { email: f.email.trim(), password: f.password } })
+      onSaved()
+    } catch (e) {
+      toast((e as Error).message, 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <Drawer title={user ? 'Kullanıcıyı düzenle' : 'Yeni kullanıcı'} onClose={onClose} footer={<>
       {user && !isMe && <Button variant="danger" onClick={() => { repos.users.remove(user.id); onSaved() }}>Kaldır</Button>}
       <div className="spacer" />
       <Button variant="ghost" onClick={onClose}>Vazgeç</Button>
-      <Button variant="primary" disabled={!f.name.trim() || !f.branchIds.length || (f.role === 'staff' && !f.staffId)} onClick={() => {
-        repos.users.upsert({ ...user, name: f.name.trim(), role: f.role, staffId: f.staffId || undefined, branchIds: f.branchIds })
-        onSaved()
-      }}>Kaydet</Button>
+      <Button variant="primary" disabled={busy || !f.name.trim() || !f.branchIds.length || (f.role === 'staff' && !f.staffId) || loginInvalid} onClick={save}>Kaydet</Button>
     </>}>
       <Field label="Ad Soyad"><Input autoFocus value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
+      {apiMode && <>
+        <Field label="Giriş e-postası"><Input type="email" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
+        <Field label={email ? 'Yeni şifre' : 'Şifre'} hint={email ? 'Değiştirmek istemiyorsanız boş bırakın.' : 'En az 8 karakter. Kullanıcıya siz iletin.'}>
+          <Input type="password" autoComplete="new-password" value={f.password} invalid={loginInvalid} onChange={(e) => setF({ ...f, password: e.target.value })} />
+        </Field>
+      </>}
       <Field label="Rol">
         <Select value={f.role} disabled={isMe} onChange={(e) => setF({ ...f, role: e.target.value as typeof f.role })}>
           <option value="owner">Salon Sahibi</option><option value="reception">Resepsiyon</option><option value="staff">Personel</option>

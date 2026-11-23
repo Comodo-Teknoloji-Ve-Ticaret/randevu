@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { HashRouter } from 'react-router-dom'
 import { AppRoutes } from './app/routes'
 import { SessionProvider } from './app/session'
-import { getStore, StoreProvider } from './infrastructure'
+import { getStore, onStoreError, StoreProvider } from './infrastructure'
 import { FeedbackProvider, useToast } from './ui'
 
 const store = getStore()
@@ -14,7 +14,9 @@ function StoreWarnings() {
     const un = store.subscribe(() => {
       if (store.persistError) toast('Tarayıcı depolama alanı dolu; değişiklikler kaydedilemiyor.', 'error')
     })
-    return () => { un() }
+    // Sunucu modunda: reddedilen değişiklik geri alınır, nedeni gösterilir.
+    const unErr = onStoreError((message) => toast(`Kaydedilmedi: ${message}`, 'error'))
+    return () => { un(); unErr() }
   }, [toast])
   return null
 }

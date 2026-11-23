@@ -7,8 +7,11 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { ROLE_LABEL, type Perm } from '../app/permissions'
 import { useSession, type ThemePref } from '../app/session'
 import { licenseStatus } from '../domain/license'
-import { formatDate, todayIstanbul } from '../domain/time'
-import { useDbSnapshot, useStore } from '../infrastructure'
+import { formatDate, nowMinutesIstanbul, todayIstanbul } from '../domain/time'
+import type { DB } from '../application/db'
+import { httpStore, useDbSnapshot, useStore } from '../infrastructure'
+import { apiFetch, apiMode, demoMode } from '../infrastructure/api'
+import { buildSeed } from '../infrastructure/seed'
 import { Avatar, cx, Popover, useConfirm, useToast } from './index'
 import './shell.css'
 import '../pages/platform/platform.css'
@@ -95,17 +98,26 @@ function UserMenu() {
             ))}
           </div>
           <div className="divider" />
-          <button
+          {demoMode && <button
             onClick={async () => {
               close()
               if (await confirm({ title: 'Demo verisi sıfırlansın mı?', text: 'Tüm değişiklikler silinir ve örnek salon verisi yeniden yüklenir.', confirm: 'Sıfırla', danger: true })) {
-                store.reset()
+                if (apiMode) {
+                  // Sunucudaki tüm veri bugünün tarihleriyle üretilen demo verisiyle değiştirilir (yalnız demo sunucusunda açık).
+                  try {
+                    await apiFetch('/api/dev/reset', { body: buildSeed(todayIstanbul(), nowMinutesIstanbul()) })
+                    httpStore().hydrate(await apiFetch<DB>('/api/sync'))
+                  } catch (e) {
+                    toast((e as Error).message, 'error')
+                    return
+                  }
+                } else store.reset()
                 toast('Demo verisi yenilendi')
               }
             }}
           >
             <RotateCcw /> Demo verisini sıfırla
-          </button>
+          </button>}
           <button onClick={() => { close(); logout(); nav('/giris') }}>
             <LogOut /> Çıkış yap
           </button>

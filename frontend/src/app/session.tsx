@@ -2,7 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Branch, Tenant, User } from '../domain/types'
 import { tenantAccess } from '../application/platformService'
 import { todayIstanbul } from '../domain/time'
-import { TenantScope, useDbSnapshot } from '../infrastructure'
+import type { DB } from '../application/db'
+import { httpStore, TenantScope, useDbSnapshot } from '../infrastructure'
+import { apiFetch, apiMode, authToken, setUnauthorizedHandler } from '../infrastructure/api'
 import { can, type Perm } from './permissions'
 
 export type ThemePref = 'light' | 'dark' | 'system'
@@ -27,6 +29,10 @@ export interface Session {
   branchId: string | null
   setBranch: (id: string) => void
   login: (userId: string) => void
+  /** Sunucu modu: e-posta/şifre ile giriş; kullanıcıyı döndürür, hata mesajıyla reddedilir. */
+  loginWithPassword: (email: string, password: string) => Promise<User>
+  /** Sunucu modu: hazır bir token ile oturum aç (ör. davet kabulü). */
+  openSession: (token: string, userId: string) => Promise<void>
   logout: () => void
   theme: ThemePref
   setTheme: (t: ThemePref) => void
@@ -78,7 +84,33 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const login = useCallback((userId: string) => {
     setSaved((s) => ({ ...s, userId, branchId: null }))
   }, [])
-  const logout = useCallback(() => setSaved((s) => ({ ...s, userId: null, branchId: null })), [])
+  const logout = useCallback(() => {
+    if (apiMode) { authToken.clear(); httpStore().clear() }
+    setSaved((s) => ({ ...s, userId: null, branchId: null }))
+  }, [])
+
+  // Sunucu modu: kayıtlı token varsa veriyi sunucudan yükle; geçersizse girişe dön.
+  const [ready, setReady] = useState(() => !apiMode || !authToken.get())
+  useEffect(() => {
+    if (!apiMode) return
+    setUnauthorizedHandler(() => { httpStore().clear(); setSaved((s) => ({ ...s, userId: null, branchId: null })) })
+    if (ready) return
+    apiFetch<DB>('/api/sync')
+      .then((db) => httpStore().hydrate(db))
+      .catch(() => { authToken.clear(); setSaved((s) => ({ ...s, userId: null, branchId: null })) })
+      .finally(() => setReady(true))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const openSession = useCallback(async (token: string, userId: string) => {
+    authToken.set(token)
+    httpStore().hydrate(await apiFetch<DB>('/api/sync'))
+    setSaved((s) => ({ ...s, userId, branchId: null }))
+  }, [])
+  const loginWithPassword = useCallback(async (email: string, password: string) => {
+    const r = await apiFetch<{ token: string; user: User }>('/api/auth/login', { body: { email, password } })
+    await openSession(r.token, r.user.id)
+    return r.user
+  }, [openSession])
 
   const value: Session = {
     user: effectiveUser,
@@ -88,11 +120,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     branchId: branch?.id ?? null,
     setBranch: (id) => setSaved((s) => ({ ...s, branchId: id })),
     login,
+    loginWithPassword,
+    openSession,
     logout,
     theme: saved.theme,
     setTheme: (theme) => setSaved((s) => ({ ...s, theme })),
     can: (p) => (effectiveUser ? can(effectiveUser.role, p) : false),
   }
+
+  if (!ready) return <div className="boot-loading" role="status">Yükleniyor…</div>
 
   return (
     <Ctx.Provider value={value}>

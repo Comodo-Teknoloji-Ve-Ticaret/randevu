@@ -120,8 +120,13 @@ api.MapPost("/dev/reset", async (System.Text.Json.Nodes.JsonObject db, IConfigur
 // Girişsiz online randevu (müşterinin telefonundan)
 var pub = api.MapGroup("/public/{slug}");
 pub.MapGet("", (string slug, PublicBookingService s, CancellationToken ct) => s.InfoAsync(slug, ct));
-pub.MapGet("/slots", (string slug, string branchId, string serviceIds, string? staffId, string date, PublicBookingService s, CancellationToken ct) =>
-    s.SlotsAsync(slug, branchId, serviceIds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), staffId ?? "any", date, ct));
+pub.MapGet("/slots", async (string slug, string branchId, string serviceIds, string? staffId, string date, int? days, PublicBookingService s, CancellationToken ct) =>
+{
+    var ids = serviceIds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    return days is null
+        ? Results.Ok(await s.SlotsAsync(slug, branchId, ids, staffId ?? "any", date, ct))
+        : Results.Ok(await s.SlotRangeAsync(slug, branchId, ids, staffId ?? "any", date, days.Value, ct));
+});
 pub.MapPost("/book", (string slug, BookingRequest req, PublicBookingService s, CancellationToken ct) => s.BookAsync(slug, req, ct))
    .RequireRateLimiting("booking");
 

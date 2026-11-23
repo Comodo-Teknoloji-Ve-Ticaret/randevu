@@ -5,11 +5,17 @@ import { platformService } from '../../application/platformService'
 import { useSession } from '../../app/session'
 import { businessTypeLabel } from '../../domain/license'
 import { useDbSnapshot, useStore } from '../../infrastructure'
+import { apiMode } from '../../infrastructure/api'
+import ApiInvite from './ApiInvite'
 import { Button, Field, Input } from '../../ui'
 import './platform.css'
 
 export default function InvitePage() {
   const { token = '' } = useParams()
+  return apiMode ? <ApiInvite token={token} /> : <LocalInvite token={token} />
+}
+
+function LocalInvite({ token }: { token: string }) {
   const store = useStore()
   useDbSnapshot()
   const { login } = useSession()

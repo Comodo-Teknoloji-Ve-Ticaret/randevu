@@ -72,6 +72,15 @@ public class PublicBookingTests(TestApp app) : IClassFixture<TestApp>
     }
 
     [Fact]
+    public async Task Slots_for_several_days_in_one_request()
+    {
+        var map = await app.CreateClient().GetFromJsonAsync<JsonObject>($"/api/public/salon-a/slots?branchId=b_a&serviceIds=sv_a&staffId=any&date={Fixture.Tomorrow}&days=3");
+        Assert.Equal(3, map!.Count);
+        Assert.Contains(map[Fixture.Tomorrow]!.AsArray(), s => s!["start"]!.GetValue<int>() == 540);
+        Assert.True(map.ContainsKey(Fixture.InDays(3)));
+    }
+
+    [Fact]
     public async Task Invalid_phone_is_rejected() =>
         Assert.Equal(HttpStatusCode.BadRequest, (await app.CreateClient().PostAsJsonAsync("/api/public/salon-a/book", Booking(660, "12"))).StatusCode);
 

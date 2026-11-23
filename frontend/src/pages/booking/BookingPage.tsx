@@ -1,22 +1,15 @@
 import { ArrowLeft, CalendarCheck2, CalendarPlus, Check, Clock3, MapPin, Phone, Scissors, Sparkles, UserRound } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { bookingService, type BookingError } from '../../application/bookingService'
 import { durationFor, priceFor } from '../../application/appointmentService'
 import { formatTRY } from '../../domain/money'
 import { formatPhone } from '../../domain/phone'
 import { addDays, dayShort, formatDate, todayIstanbul, toHHMM } from '../../domain/time'
-import { useDbSnapshot, useStore } from '../../infrastructure'
 import { Avatar, Button, cx, Field, Input, Textarea } from '../../ui'
+import { useBookingSource } from './bookingSource'
 import './booking.css'
 
 type Step = 'branch' | 'service' | 'staff' | 'time' | 'info' | 'done'
-const ERR: Record<BookingError, string> = {
-  slot_taken: 'Bu saat az önce doldu. Lütfen başka bir saat seçin.',
-  disabled: 'Salon şu anda online randevu almıyor.',
-  invalid_phone: 'Lütfen geçerli bir cep telefonu girin.',
-  invalid: 'Lütfen bilgileri kontrol edin.',
-}
 
 function icsFile(title: string, date: string, start: number, end: number, location: string) {
   const dt = (m: number) => `${date.replace(/-/g, '')}T${String(Math.floor(m / 60)).padStart(2, '0')}${String(m % 60).padStart(2, '0')}00`
@@ -29,10 +22,8 @@ function icsFile(title: string, date: string, start: number, end: number, locati
 
 export default function BookingPage() {
   const { slug = '' } = useParams()
-  const store = useStore()
-  useDbSnapshot()
-  const svc = bookingService(store, slug)
-  const info = svc.info()
+  const src = useBookingSource(slug)
+  const info = src.info
   const today = todayIstanbul()
 
   const [step, setStep] = useState<Step>('branch')
@@ -60,9 +51,12 @@ export default function BookingPage() {
   const maxAhead = info?.tenant.onlineBooking.maxDaysAhead ?? 30
 
   const days = useMemo(() => Array.from({ length: Math.min(21, maxAhead + 1) }, (_, i) => addDays(today, i)), [today, maxAhead])
-  const slotsFor = (d: string) => (branch ? svc.slots(branch.id, serviceIds, staffId, d) : [])
+  const slotsFor = (d: string) => (branch ? src.slots(branch.id, serviceIds, staffId, d) : [])
   const slots = effStep === 'time' ? slotsFor(date) : []
-  const dayHas = useMemo(() => (effStep === 'time' ? new Map(days.map((d) => [d, slotsFor(d).length > 0])) : new Map()), [effStep, days, serviceIds, staffId, branch?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (effStep === 'time' && branch) src.prefetch(branch.id, serviceIds, staffId, today, days.length)
+  }, [effStep, branch?.id, serviceIds.join(), staffId, today, days.length, src.version]) // eslint-disable-line react-hooks/exhaustive-deps
+  const dayHas = useMemo(() => (effStep === 'time' ? new Map(days.map((d) => [d, slotsFor(d).length > 0])) : new Map()), [effStep, days, serviceIds, staffId, branch?.id, src.version]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Seçili günde boş saat yoksa ilk uygun güne geç
   useEffect(() => {
@@ -71,6 +65,7 @@ export default function BookingPage() {
     if (first) setDate(first)
   }, [effStep, dayHas]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (info === undefined) return <div className="boot-loading" role="status">Yükleniyor…</div>
   if (!info) {
     return (
       <div className="bk-shell">
@@ -93,12 +88,12 @@ export default function BookingPage() {
     { label: 'Akşam', from: 1020, to: 1440 },
   ]
 
-  const submit = () => {
+  const submit = async () => {
     if (!branch || time === null) return
-    const r = svc.book({ branchId: branch.id, serviceIds, staffId, date, start: time, name, phone, note })
+    const r = await src.book({ branchId: branch.id, serviceIds, staffId, date, start: time, name, phone, note })
     if (!r.ok) {
-      setError(ERR[r.error])
-      if (r.error === 'slot_taken') { setTime(null); setStep('time') }
+      setError(r.message)
+      if (r.slotTaken) { setTime(null); setStep('time') }
       return
     }
     setResult(r)

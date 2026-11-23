@@ -1,12 +1,16 @@
-import { ArrowRight, Building2, CalendarCheck2, Scissors, ShieldCheck, Smartphone, Wallet } from 'lucide-react'
+import { ArrowRight, Building2, CalendarCheck2, KeyRound, LogIn, Mail, Scissors, ShieldCheck, Smartphone, Wallet } from 'lucide-react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { tenantAccess } from '../application/platformService'
 import { licenseStatus } from '../domain/license'
-import { todayIstanbul } from '../domain/time'
+import { nowMinutesIstanbul, todayIstanbul } from '../domain/time'
 import { ROLE_LABEL } from '../app/permissions'
 import { isSuspendedLogin, useSession } from '../app/session'
 import { useDbSnapshot } from '../infrastructure'
-import { Avatar, Badge, useToast } from '../ui'
+import { apiMode, demoMode } from '../infrastructure/api'
+import { DEMO_PASSWORD, demoEmail } from '../infrastructure/demoAccounts'
+import { buildSeed } from '../infrastructure/seed'
+import { Avatar, Badge, Button, Field, Input, useToast } from '../ui'
 import './login.css'
 
 const FEATURES = [
@@ -16,15 +20,44 @@ const FEATURES = [
 ]
 
 export default function Login() {
-  const db = useDbSnapshot()
-  const { login } = useSession()
+  const stored = useDbSnapshot()
+  // Sunucu modunda giriş öncesi veri yoktur; demo hesap listesi örnek veriden çizilir (sunucudaki demo verisiyle aynı kimlikler).
+  const db = useMemo(() => (apiMode && demoMode ? buildSeed(todayIstanbul(), nowMinutesIstanbul()) : stored), [stored])
+  const { login, loginWithPassword } = useSession()
   const nav = useNavigate()
   const toast = useToast()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const signIn = async (mail: string, pass: string) => {
+    setBusy(true)
+    setError(null)
+    try {
+      const user = await loginWithPassword(mail, pass)
+      nav(user.role === 'platform' ? '/platform' : '/takvim')
+    } catch (e) {
+      setError((e as Error).message)
+      toast((e as Error).message, 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    if (email.trim() && password) void signIn(email, password)
+  }
 
   const go = (userId: string, role: string) => {
     if (isSuspendedLogin(db, userId)) {
       const t = db.tenants.find((x) => x.id === db.users.find((u) => u.id === userId)?.tenantId)
       toast(t?.status === 'suspended' ? 'Bu işletmenin hesabı askıya alınmış. Comodo ile iletişime geçin.' : 'Lisans süresi doldu. Yenilemek için Comodo ile iletişime geçin.', 'error')
+      return
+    }
+    if (apiMode) {
+      void signIn(demoEmail(userId), DEMO_PASSWORD)
       return
     }
     login(userId)
@@ -57,7 +90,16 @@ export default function Login() {
 
       <section className="login-panel">
         <div className="login-panel-inner">
-          <h2>Demo hesabıyla giriş</h2>
+          {apiMode && (
+            <form className="login-form" onSubmit={submit}>
+              <h2>Giriş yap</h2>
+              <Field label="E-posta"><Input icon={Mail} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+              <Field label="Şifre" error={error}><Input icon={KeyRound} type="password" autoComplete="current-password" value={password} invalid={!!error} onChange={(e) => { setPassword(e.target.value); setError(null) }} /></Field>
+              <Button variant="primary" size="lg" icon={LogIn} type="submit" disabled={busy || !email.trim() || !password}>{busy ? 'Giriş yapılıyor…' : 'Giriş yap'}</Button>
+            </form>
+          )}
+          {demoMode && <>
+          <h2>{apiMode ? 'ya da demo hesabıyla' : 'Demo hesabıyla giriş'}</h2>
           <p className="muted">Bir rol seçin; her rol farklı yetkilerle açılır.</p>
 
           {db.tenants.map((t) => (
@@ -102,6 +144,7 @@ export default function Login() {
               <span key={t.id}>{i > 0 && ' · '}<a href={`#/r/${t.slug}`}>{t.name}</a></span>
             ))}
           </p>
+          </>}
         </div>
       </section>
     </div>

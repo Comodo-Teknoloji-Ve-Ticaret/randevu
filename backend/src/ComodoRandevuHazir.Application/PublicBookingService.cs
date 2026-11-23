@@ -64,6 +64,17 @@ public class PublicBookingService(IRecordStore records, IClock clock)
     public async Task<List<Slot>> SlotsAsync(string slug, string branchId, IReadOnlyList<string> serviceIds, string staffId, string date, CancellationToken ct) =>
         await SlotsForAsync(await LiveAsync(slug, ct), branchId, serviceIds, staffId, date, ct);
 
+    /// <summary>Takvim görünümü için ardışık günlerin boş saatleri (en fazla 31 gün) tek istekte.</summary>
+    public async Task<Dictionary<string, List<Slot>>> SlotRangeAsync(string slug, string branchId, IReadOnlyList<string> serviceIds, string staffId, string from, int days, CancellationToken ct)
+    {
+        var salon = await LiveAsync(slug, ct);
+        if (!DateOnly.TryParseExact(from, "yyyy-MM-dd", out var start)) throw new ValidationException("Geçersiz tarih.");
+        var result = new Dictionary<string, List<Slot>>();
+        foreach (var d in Enumerable.Range(0, Math.Clamp(days, 1, 31)).Select(i => start.AddDays(i).ToString("yyyy-MM-dd")))
+            result[d] = await SlotsForAsync(salon, branchId, serviceIds, staffId, d, ct);
+        return result;
+    }
+
     private async Task<List<Slot>> SlotsForAsync(Salon salon, string branchId, IReadOnlyList<string> serviceIds, string staffId, string dateText, CancellationToken ct)
     {
         if (serviceIds.Count == 0 || !DateOnly.TryParse(dateText, out var date)) return [];

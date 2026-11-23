@@ -2,15 +2,40 @@ import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNod
 import type { DB, Store } from '../application/db'
 import { createRepos, type Repos } from '../application/repos'
 import { diffDays, nowMinutesIstanbul, todayIstanbul } from '../domain/time'
+import { apiFetch, apiMode } from './api'
+import { createHttpStore, type Batch, type HttpStore } from './httpStore'
 import { createLocalStore } from './localStore'
 import { buildSeed } from './seed'
 import { shiftDb } from './shift'
 
 let singleton: Store | null = null
+const errorListeners = new Set<(message: string) => void>()
 
-/** Uygulama genelinde tek localStorage deposu. Eski demo verisi haftalık adımlarla bugüne kaydırılır. */
+/** Sunucu bir değişikliği reddettiğinde (ekran eski hâline döner) mesajı dinleyenlere iletir. */
+export function onStoreError(fn: (message: string) => void): () => void {
+  errorListeners.add(fn)
+  return () => errorListeners.delete(fn)
+}
+
+/** Sunucu modunda HttpStore'a erişim (giriş sonrası doldurma, çıkışta boşaltma). */
+export function httpStore(): HttpStore {
+  if (!apiMode) throw new Error('Sunucu modu kapalı')
+  return getStore() as HttpStore
+}
+
+/**
+ * Uygulama genelinde tek depo. Sunucu adresi (VITE_API_URL) tanımlıysa sunucu destekli depo,
+ * değilse localStorage deposu; eski demo verisi haftalık adımlarla bugüne kaydırılır.
+ */
 export function getStore(): Store {
   if (singleton) return singleton
+  if (apiMode) {
+    singleton = createHttpStore(
+      (batch: Batch) => apiFetch('/api/batch', { body: batch }),
+      (message) => errorListeners.forEach((fn) => fn(message)),
+    )
+    return singleton
+  }
   const today = todayIstanbul()
   const store = createLocalStore('makas:v1', localStorage, () => buildSeed(today, nowMinutesIstanbul()), today)
   const db = store.read()
