@@ -193,6 +193,10 @@ p { margin: 0; }
 .cta-in { display: grid; justify-items: center; gap: 16px; }
 .cta h2 { font-size: clamp(26px, 4vw, 40px); font-weight: 800; max-width: 760px; }
 .cta p { color: #e6e2ff; font-size: 17.5px; margin-bottom: 10px; }
+.cta .cta-mail { margin: 6px 0 0; font-size: 15.5px; }
+.cta .cta-mail a { color: #fff; font-weight: 700; }
+.price-mail { text-align: center; margin-top: 14px; font-size: 14.5px; color: var(--muted); }
+.price-mail a { display: block; font-weight: 700; margin-top: 2px; }
 
 /* Alt bilgi */
 .foot { padding: 34px 0 40px; border-top: 1px solid var(--line); }

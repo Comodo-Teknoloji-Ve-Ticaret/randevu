@@ -13,9 +13,11 @@ if (!/^90\d{10}$/.test(digits)) console.warn(`⚠️  WhatsApp numarası eksik y
 const message = cfg.whatsappMessage.replaceAll('{name}', cfg.name)
 const wa = `https://wa.me/${digits || '90XXXXXXXXXX'}?text=${encodeURIComponent(message)}`
 
+const mailAscii = cfg.email ? cfg.email.replace(/@(.+)$/, (_, d) => '@' + new URL(`https://${d}`).host) : ''
+const mailHref = mailAscii ? `mailto:${mailAscii}?subject=${encodeURIComponent(cfg.name + ' hakkında bilgi')}` : ''
 const contact = [
   cfg.phone && `<a href="tel:${esc(cfg.phone.replace(/\s/g, ''))}">${esc(cfg.phone)}</a>`,
-  cfg.email && `<a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a>`,
+  cfg.email && `<a href="${esc(mailHref)}">${esc(cfg.email)}</a>`,
   `<a href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`,
 ].filter(Boolean).join(' · ')
 
@@ -29,6 +31,8 @@ const values = {
   year: String(new Date().getFullYear()),
   wa: esc(wa),
   contactLine: contact,
+  mailHref: esc(mailHref),
+  email: esc(cfg.email),
 }
 
 let html = readFileSync(join(root, 'src/index.html'), 'utf8')
