@@ -1,9 +1,9 @@
 {
   "voice": "Yelda",
   "rate": 188,
-  "_not": "Her satır bir sahnenin konuşması (sırayla: giriş, online randevu, takvim, hatırlatma, kasa, raporlar, kapanış). Sahne süreleri konuşmaya göre ayarlanır. Yazım okunuşa göredir: 'karekod' (QR), 'Vatsap' (WhatsApp), 'Randevu Hazır'. Fiyat değişirse son satırı da güncelleyin.",
+  "_not": "Her satır bir sahnenin konuşması (sırayla: giriş, online randevu, takvim, hatırlatma, kasa, raporlar, kapanış). Sahne süreleri konuşmaya göre ayarlanır. Yazım okunuşa göredir: 'karekod' (QR), 'Vatsap' (WhatsApp), 'Randevun Hazır'. Fiyat değişirse son satırı da güncelleyin.",
   "segments": [
-    "Salonunuzun randevusu, kasası ve müşterileri, tek ekranda: Randevu Hazır.",
+    "Salonunuzun randevusu, kasası ve müşterileri, tek ekranda: Randevun Hazır.",
     "Müşterileriniz, linkten ya da karekoddan randevusunu kendisi alır. Hizmetini, uzmanını ve saatini seçer; talep, anında salonunuza düşer.",
     "Bütün randevular, personel personel takviminizde.",
     "Yarınki randevulara hatırlatma, tek tıkla gider.",
