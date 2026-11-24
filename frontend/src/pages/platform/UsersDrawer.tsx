@@ -4,8 +4,9 @@ import { newId } from '../../application/db'
 import { ROLE_LABEL } from '../../app/permissions'
 import { useSession } from '../../app/session'
 import type { Role, User } from '../../domain/types'
-import { httpStore, useDbSnapshot, useStore } from '../../infrastructure'
-import { apiFetch, apiMode } from '../../infrastructure/api'
+import { useDbSnapshot, useStore } from '../../infrastructure'
+import { storeSettled } from '../../infrastructure/storeHelpers'
+import { apiFetch } from '../../infrastructure/api'
 import { Avatar, Badge, Button, Drawer, Field, Input, Modal, Select, useToast } from '../../ui'
 
 type SalonRole = Exclude<Role, 'platform'>
@@ -25,7 +26,7 @@ export function UsersDrawer({ tenantId, onClose }: { tenantId: string | null; on
   const [action, setAction] = useState<Action | null>(null)
 
   const loadEmails = useCallback(() => {
-    if (apiMode) apiFetch<Record<string, string>>('/api/users/emails').then(setEmails).catch(() => setEmails({}))
+    apiFetch<Record<string, string>>('/api/users/emails').then(setEmails).catch(() => setEmails({}))
   }, [])
   useEffect(loadEmails, [loadEmails])
 
@@ -36,7 +37,6 @@ export function UsersDrawer({ tenantId, onClose }: { tenantId: string | null; on
       onClose={onClose}
       footer={<><span className="spacer" /><Button variant="primary" icon={UserPlus} onClick={() => setAdding(true)}>{tenant ? 'Kullanıcı aç' : 'Yönetici aç'}</Button></>}
     >
-      {!apiMode && <p className="t-small muted">Demo modunda giriş bilgisi yoktur; e-posta ve şifre işlemleri sunucu sürümünde çalışır.</p>}
       <div className="list">
         {users.map((u) => {
           const email = emails[u.id]
@@ -45,8 +45,8 @@ export function UsersDrawer({ tenantId, onClose }: { tenantId: string | null; on
               <Avatar name={u.name} size={34} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="t-strong">{u.name}{u.id === me?.id && <span className="muted t-small"> (siz)</span>}</div>
-                <div className="t-small muted ellipsis">{apiMode ? email ?? <span style={{ color: 'var(--warning)' }}>giriş bilgisi yok</span> : ROLE_LABEL[u.role]}</div>
-                {apiMode && (
+                <div className="t-small muted ellipsis">{email ?? <span style={{ color: 'var(--warning)' }}>giriş bilgisi yok</span>}</div>
+                {(
                   <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
                     {email ? <>
                       <Button size="sm" icon={Mail} onClick={() => setAction({ kind: 'email', user: u })}>E-posta değiştir</Button>
@@ -75,7 +75,7 @@ function NewUser({ tenantId, onClose, onSaved }: { tenantId: string | null; onCl
   const staff = tenantId ? db.staff.filter((s) => s.tenantId === tenantId && s.active) : []
   const [f, setF] = useState({ name: '', role: 'owner' as SalonRole, staffId: '', email: '', password: '' })
   const [busy, setBusy] = useState(false)
-  const needsLogin = apiMode
+  const needsLogin = true
   const invalid = !f.name.trim() || (tenantId !== null && f.role === 'staff' && !f.staffId) || (needsLogin && (!f.email.includes('@') || f.password.length < 8))
 
   const save = async () => {
@@ -92,7 +92,7 @@ function NewUser({ tenantId, onClose, onSaved }: { tenantId: string | null; onCl
     if (!needsLogin) { toast('Kullanıcı açıldı'); onSaved(); return }
     setBusy(true)
     try {
-      await httpStore().settled() // kullanıcı önce sunucuya yazılmalı
+      await storeSettled() // kullanıcı önce kalıcı olarak yazılmalı
       await apiFetch(`/api/users/${id}/credentials`, { body: { email: f.email.trim(), password: f.password } })
       toast(`${user.name} açıldı. Giriş bilgilerini kendisine iletin.`)
       onSaved()

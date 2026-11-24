@@ -10,6 +10,7 @@ import { licenseStatus } from '../domain/license'
 import { formatDate, nowMinutesIstanbul, todayIstanbul } from '../domain/time'
 import type { DB } from '../application/db'
 import { httpStore, useDbSnapshot, useStore } from '../infrastructure'
+import { resetLocalCredentials } from '../infrastructure/storeHelpers'
 import { apiFetch, apiMode, demoMode } from '../infrastructure/api'
 import { buildSeed } from '../infrastructure/seed'
 import { Avatar, cx, Popover, useConfirm, useToast } from './index'
@@ -114,14 +115,14 @@ function UserMenu() {
                     toast((e as Error).message, 'error')
                     return
                   }
-                } else store.reset()
+                } else { store.reset(); await resetLocalCredentials() }
                 toast('Demo verisi yenilendi')
               }
             }}
           >
             <RotateCcw /> Demo verisini sıfırla
           </button>}
-          {apiMode && <button onClick={() => { close(); setChangingPw(true) }}><KeyRound /> Şifremi değiştir</button>}
+          <button onClick={() => { close(); setChangingPw(true) }}><KeyRound /> Şifremi değiştir</button>
           <button onClick={() => { close(); logout(); nav('/giris') }}>
             <LogOut /> Çıkış yap
           </button>

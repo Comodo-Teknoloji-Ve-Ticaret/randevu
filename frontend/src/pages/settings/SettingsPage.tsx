@@ -9,7 +9,8 @@ import { bookingLink } from '../../domain/links'
 import { PLAN } from '../../domain/plan'
 import { formatPhone } from '../../domain/phone'
 import type { Branch, Role, User } from '../../domain/types'
-import { httpStore, useRepos, useStore } from '../../infrastructure'
+import { useRepos, useStore } from '../../infrastructure'
+import { storeSettled } from '../../infrastructure/storeHelpers'
 import { apiFetch, apiMode } from '../../infrastructure/api'
 import { Avatar, Badge, Button, cx, Drawer, Field, Input, PageHeader, Select, Switch, useToast } from '../../ui'
 import { HoursEditor } from '../staff/StaffPage'
@@ -210,7 +211,7 @@ function UsersSection() {
   const [emails, setEmails] = useState<Record<string, string>>({})
   const [emailsVersion, setEmailsVersion] = useState(0)
   useEffect(() => {
-    if (apiMode) apiFetch<Record<string, string>>('/api/users/emails').then(setEmails).catch(() => setEmails({}))
+    apiFetch<Record<string, string>>('/api/users/emails').then(setEmails).catch(() => setEmails({}))
   }, [emailsVersion])
   return (
     <div className="card">
@@ -225,7 +226,7 @@ function UsersSection() {
         {users.map((u) => (
           <div key={u.id} className="list-item clickable" onClick={() => setEdit(u)}>
             <Avatar name={u.name} size={34} />
-            <div style={{ flex: 1 }}><div className="t-strong">{u.name}{u.id === me?.id && <span className="muted t-small"> (siz)</span>}</div><div className="t-small muted">{u.branchIds.map((b) => repos.branches.get(b)?.name).join(', ')}{apiMode && <> · {emails[u.id] ?? <span style={{ color: 'var(--warning)' }}>giriş bilgisi yok</span>}</>}</div></div>
+            <div style={{ flex: 1 }}><div className="t-strong">{u.name}{u.id === me?.id && <span className="muted t-small"> (siz)</span>}</div><div className="t-small muted">{u.branchIds.map((b) => repos.branches.get(b)?.name).join(', ')}<> · {emails[u.id] ?? <span style={{ color: 'var(--warning)' }}>giriş bilgisi yok</span>}</></div></div>
             <div className="row" style={{ gap: 6 }}>
               {u.perms && u.role !== 'owner' && <Badge tone="warning">Özel yetki</Badge>}
               <Badge tone={u.role === 'owner' ? 'accent' : u.role === 'reception' ? 'info' : 'neutral'}>{ROLE_LABEL[u.role]}</Badge>
@@ -254,7 +255,7 @@ function UserEditor({ user, email, onClose, onSaved }: { user?: User; email: str
   const toggle = (p: Perm, on: boolean) => setPerms(on ? [...perms, p] : perms.filter((x) => x !== p))
   const isMe = user?.id === me?.id
   // Sunucu modu: e-posta değişti ya da şifre yazıldıysa giriş bilgisi güncellenir (ikisi birlikte gerekir).
-  const loginChange = apiMode && (f.password !== '' || (f.email.trim() !== email && f.email.trim() !== ''))
+  const loginChange = (f.password !== '' || (f.email.trim() !== email && f.email.trim() !== ''))
   const loginInvalid = loginChange && (!f.email.includes('@') || f.password.length < 8)
 
   const save = async () => {
@@ -262,7 +263,7 @@ function UserEditor({ user, email, onClose, onSaved }: { user?: User; email: str
     if (!loginChange) { onSaved(); return }
     setBusy(true)
     try {
-      await httpStore().settled() // kullanıcı önce sunucuya yazılmalı
+      await storeSettled() // kullanıcı önce kalıcı olarak yazılmalı
       await apiFetch(`/api/users/${saved.id}/credentials`, { body: { email: f.email.trim(), password: f.password } })
       onSaved()
     } catch (e) {
@@ -280,12 +281,12 @@ function UserEditor({ user, email, onClose, onSaved }: { user?: User; email: str
       <Button variant="primary" disabled={busy || !f.name.trim() || !f.branchIds.length || (needsStaff && !f.staffId) || loginInvalid} onClick={save}>Kaydet</Button>
     </>}>
       <Field label="Ad Soyad"><Input autoFocus value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
-      {apiMode && <>
+      <>
         <Field label="Giriş e-postası"><Input type="email" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
         <Field label={email ? 'Yeni şifre' : 'Şifre'} hint={email ? 'Değiştirmek istemiyorsanız boş bırakın.' : 'En az 8 karakter. Kullanıcıya siz iletin.'}>
           <Input type="password" autoComplete="new-password" value={f.password} invalid={loginInvalid} onChange={(e) => setF({ ...f, password: e.target.value })} />
         </Field>
-      </>}
+      </>
       <Field label="Rol">
         <Select value={f.role} disabled={isMe} onChange={(e) => setRole(e.target.value as typeof f.role)}>
           <option value="owner">Salon Sahibi</option><option value="reception">Resepsiyon</option><option value="staff">Personel</option>

@@ -92,13 +92,13 @@ export default function Login() {
 
       <section className="login-panel">
         <div className="login-panel-inner">
-          {apiMode && forgot && (
+          {forgot && (
             <ForgotPassword initialEmail={email} onDone={(mail) => {
               setForgot(false)
               if (mail) { setEmail(mail); setPassword(''); toast('Şifreniz yenilendi. Yeni şifrenizle giriş yapın.') }
             }} />
           )}
-          {apiMode && !forgot && (
+          {!forgot && (
             <form className="login-form" onSubmit={submit}>
               <h2>Giriş yap</h2>
               <Field label="E-posta"><Input icon={Mail} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
@@ -108,7 +108,7 @@ export default function Login() {
             </form>
           )}
           {demoMode && <>
-          <h2>{apiMode ? 'ya da demo hesabıyla' : 'Demo hesabıyla giriş'}</h2>
+          <h2>ya da demo hesabıyla</h2>
           <p className="muted">Bir rol seçin; her rol farklı yetkilerle açılır.</p>
 
           {db.tenants.map((t) => (

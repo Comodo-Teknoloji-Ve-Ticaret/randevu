@@ -29,7 +29,7 @@ export interface Session {
   branchId: string | null
   setBranch: (id: string) => void
   login: (userId: string) => void
-  /** Sunucu modu: e-posta/şifre ile giriş; kullanıcıyı döndürür, hata mesajıyla reddedilir. */
+  /** E-posta/şifre ile giriş (tarayıcı demosunda taklit edilir); kullanıcıyı döndürür, hata mesajıyla reddedilir. */
   loginWithPassword: (email: string, password: string) => Promise<User>
   /** Sunucu modu: hazır bir token ile oturum aç (ör. davet kabulü). */
   openSession: (token: string, userId: string) => Promise<void>
@@ -102,6 +102,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const openSession = useCallback(async (token: string, userId: string) => {
+    if (!apiMode) { setSaved((s) => ({ ...s, userId, branchId: null })); return } // tarayıcı demosu: token yok
     authToken.set(token)
     httpStore().hydrate(await apiFetch<DB>('/api/sync'))
     setSaved((s) => ({ ...s, userId, branchId: null }))

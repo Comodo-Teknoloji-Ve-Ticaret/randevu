@@ -2,7 +2,9 @@ import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNod
 import type { DB, Store } from '../application/db'
 import { createRepos, type Repos } from '../application/repos'
 import { diffDays, nowMinutesIstanbul, todayIstanbul } from '../domain/time'
-import { apiFetch, apiMode } from './api'
+import { apiFetch, apiMode, setLocalHandler } from './api'
+import { createLocalApi } from './localApi'
+import { registerLocalReset } from './storeHelpers'
 import { createHttpStore, type Batch, type HttpStore } from './httpStore'
 import { createLocalStore } from './localStore'
 import { buildSeed } from './seed'
@@ -44,6 +46,9 @@ export function getStore(): Store {
     if (weeks > 0) store.write(shiftDb(db, weeks * 7))
   }
   singleton = store
+  const localApi = createLocalApi(store)
+  setLocalHandler(localApi.handle)
+  registerLocalReset(localApi.reset)
   return store
 }
 

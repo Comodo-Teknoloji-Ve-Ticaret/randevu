@@ -44,12 +44,13 @@ export function ForgotPassword({ initialEmail, onDone }: { initialEmail: string;
   const [pw, setPw] = useState('')
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [demoCode, setDemoCode] = useState<string | null>(null)
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true); setErr(null)
     try { await fn() } catch (e) { setErr((e as Error).message) } finally { setBusy(false) }
   }
-  const sendCode = (e: FormEvent) => { e.preventDefault(); void run(async () => { await apiFetch('/api/auth/forgot', { body: { email } }); setStep('code') }) }
+  const sendCode = (e: FormEvent) => { e.preventDefault(); void run(async () => { const r = await apiFetch<{ demoCode?: string } | undefined>('/api/auth/forgot', { body: { email } }); setDemoCode(r?.demoCode ?? null); setStep('code') }) }
   const reset = (e: FormEvent) => { e.preventDefault(); void run(async () => { await apiFetch('/api/auth/reset', { body: { email, code, newPassword: pw } }); onDone(email) }) }
 
   return step === 'email' ? (
@@ -64,6 +65,7 @@ export function ForgotPassword({ initialEmail, onDone }: { initialEmail: string;
     <form className="login-form" onSubmit={reset}>
       <h2>Yeni şifre</h2>
       <p className="muted t-small"><b>{email}</b> kayıtlıysa 6 haneli kod gönderildi (15 dakika geçerli). Gelen kutunuzu ve istenmeyen klasörünü kontrol edin.</p>
+      {demoCode && <p className="info-banner t-small">Tarayıcı demosunda e-posta gönderilmez. Kodunuz: <b>{demoCode}</b></p>}
       <Field label="Kod"><Input inputMode="numeric" autoComplete="one-time-code" maxLength={6} autoFocus value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} /></Field>
       <Field label="Yeni şifre" hint="En az 8 karakter." error={err}><Input icon={KeyRound} type="password" autoComplete="new-password" value={pw} invalid={!!err} onChange={(e) => { setPw(e.target.value); setErr(null) }} /></Field>
       <Button variant="primary" size="lg" type="submit" disabled={busy || code.length !== 6 || pw.length < 8}>{busy ? 'Kaydediliyor…' : 'Şifremi yenile'}</Button>

@@ -29,7 +29,21 @@ let onUnauthorized: (() => void) | null = null
 /** Oturum süresi dolunca (401) çağrılır: oturumu kapatıp giriş ekranına döner. */
 export const setUnauthorizedHandler = (fn: () => void) => { onUnauthorized = fn }
 
+type LocalHandler = (path: string, body: Record<string, unknown> | undefined) => Promise<unknown>
+let localHandler: LocalHandler | null = null
+/** Sunucusuz demo: giriş/hesap uç noktalarını tarayıcıda karşılayan taklit (bkz. localApi.ts). */
+export const setLocalHandler = (fn: LocalHandler) => { localHandler = fn }
+
 export async function apiFetch<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
+  if (!apiMode) {
+    if (!localHandler) throw new ApiError(0, 'Demo hazır değil.')
+    try {
+      return (await localHandler(path, init.body as Record<string, unknown> | undefined)) as T
+    } catch (e) {
+      const status = (e as { status?: number }).status ?? 500
+      throw new ApiError(status, (e as Error).message || 'Beklenmeyen bir hata oluştu.')
+    }
+  }
   const token = authToken.get()
   let res: Response
   try {

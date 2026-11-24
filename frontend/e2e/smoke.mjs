@@ -64,6 +64,20 @@ async function asUser(user) {
   }, user, token, !!API)
 }
 
+/** E-posta/şifreyle giriş denemesi (oturumu değiştirmez): sunucuya ya da tarayıcı demosunun taklit katmanına. */
+async function tryLogin(email, password) {
+  if (API) {
+    const r = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) })
+    return { status: r.status, role: r.ok ? (await r.json()).user?.role : null }
+  }
+  return page.evaluate(async (email, password) => {
+    // Uygulamanın yüklediği modülün aynısı (dev sunucusu düzenlenen dosyaya ?t= ekler; farklı adres = ayrı kopya)
+    const url = performance.getEntriesByType('resource').map((r) => r.name).find((n) => n.includes('/src/infrastructure/api.ts')) ?? '/src/infrastructure/api.ts'
+    const { apiFetch } = await import(url)
+    try { const r = await apiFetch('/api/auth/login', { body: { email, password } }); return { status: 200, role: r.user.role } } catch (e) { return { status: e.status, role: null } }
+  }, email, password)
+}
+
 async function fresh(user, w = 1440, h = 900) {
   if (page) await page.close()
   page = await b.newPage()
@@ -726,10 +740,11 @@ const suites = {
     await step('Platform: davet linki ile giriş', async () => {
       const url = await page.evaluate(() => document.querySelector('.invite-box code').textContent)
       await page.goto('about:blank'); await page.goto(url, { waitUntil: 'networkidle0' }); await sleep(300)
-      await fill('Cep telefonu', '05321234567')
-      if (API) { await fill('E-posta', `ali.${Date.now()}@test.local`); await fill('Şifre', 'gizli-sifre-1') }
+      const mail = `ali.${Date.now()}@test.local`
+      await fill('Cep telefonu', '05321234567'); await fill('E-posta', mail); await fill('Şifre', 'gizli-sifre-1')
       await clickText('Panelime gir', 'button'); await sleep(API ? 1500 : 500)
       await expectText('Test Berber')
+      if ((await tryLogin(mail, 'gizli-sifre-1')).status !== 200) throw new Error('davetle belirlenen şifreyle giriş olmadı')
     })
     await step('Platform: lisans uzat', async () => {
       await asUser('u_platform')
@@ -744,23 +759,24 @@ const suites = {
     })
   },
   async password() {
-    if (!API) return // şifreler yalnız sunucu modunda var
     await fresh('u_t_lara_rec')
     await step('Şifre: kullanıcı kendi şifresini değiştirir', async () => {
       await go('/takvim')
       await page.click('.sidebar-foot .user-btn'); await clickText('Şifremi değiştir', '.menu button')
       await fill('Mevcut şifre', 'demo1234'); await fill('Yeni şifre', 'yeni-sifre-123'); await fill('Yeni şifre (tekrar)', 'yeni-sifre-123')
       await clickText('Kaydet', '.modal button'); await sleep(600); await expectText('Şifreniz değiştirildi')
-      const r = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: demoEmail('u_t_lara_rec'), password: 'yeni-sifre-123' }) })
-      if (!r.ok) throw new Error('yeni şifreyle giriş olmadı')
+      if ((await tryLogin(demoEmail('u_t_lara_rec'), 'yeni-sifre-123')).status !== 200) throw new Error('yeni şifreyle giriş olmadı')
     })
     await step('Şifre: unuttum → e-postaya gelen kodla yenile → giriş', async () => {
       await asUser(null); await go('/giris')
       await clickText('Şifremi unuttum', '.login-link')
       await fill('E-posta', demoEmail('u_t_lara_owner')); await clickText('Kod gönder', '.login-form button'); await sleep(600)
       await expectText('6 haneli kod')
-      const mail = await (await fetch(API + '/api/dev/emails?to=' + encodeURIComponent(demoEmail('u_t_lara_owner')))).json()
-      const code = mail.body.match(/\b\d{6}\b/)[0]
+      // Sunucu: e-posta kutusundan; tarayıcı demosu: e-posta gönderilemediği için kod ekranda gösterilir
+      const code = API
+        ? (await (await fetch(API + '/api/dev/emails?to=' + encodeURIComponent(demoEmail('u_t_lara_owner')))).json()).body.match(/\b\d{6}\b/)[0]
+        : await page.evaluate(() => document.querySelector('.login-form .info-banner b')?.textContent)
+      if (!/^\d{6}$/.test(code ?? '')) throw new Error('kod bulunamadı')
       await fill('Kod', code); await fill('Yeni şifre', 'unuttum-12345')
       await clickText('Şifremi yenile', '.login-form button'); await sleep(600); await expectText('Şifreniz yenilendi')
       await fill('Şifre', 'unuttum-12345'); await clickText('Giriş yap', '.login-form button'); await sleep(1500)
@@ -776,8 +792,7 @@ const suites = {
       await clickText('90 gün', '.modal .pay-q'); await expectText('₺6.000')
       await page.keyboard.press('Escape'); await sleep(200)
     })
-    if (!API) return // giriş bilgileri yalnız sunucu modunda
-    const login = async (email, password) => (await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) })).status
+    const login = async (email, password) => (await tryLogin(email, password)).status
     const openUsers = async (salon) => {
       await go('/platform')
       await page.evaluate((n) => [...document.querySelectorAll('tbody tr')].find((r) => r.textContent.includes(n)).querySelector('[aria-label=Diğer]').click(), salon); await sleep(200)
@@ -820,8 +835,7 @@ const suites = {
       await clickText('Yönetici aç', '.drawer-foot button')
       await fill('Ad Soyad', 'Ekip Arkadaşı'); await fill('Giriş e-postası', 'ekip@comodo.test'); await fill('Şifre', 'ekip-sifre-123')
       await clickText('Aç', '.modal .btn-primary'); await sleep(1200)
-      const r = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'ekip@comodo.test', password: 'ekip-sifre-123' }) })
-      if ((await r.json()).user?.role !== 'platform') throw new Error('yönetici olarak giriş yapamadı')
+      if ((await tryLogin('ekip@comodo.test', 'ekip-sifre-123')).role !== 'platform') throw new Error('yönetici olarak giriş yapamadı')
     })
   },
   async booking() {
