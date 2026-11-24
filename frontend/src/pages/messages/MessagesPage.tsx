@@ -7,6 +7,7 @@ import { addDays, formatDate, todayIstanbul, toHHMM } from '../../domain/time'
 import type { Appointment, MessageKind, MessageLog, MessageTemplate } from '../../domain/types'
 import { useSession } from '../../app/session'
 import { useRepos } from '../../infrastructure'
+import { apiMode } from '../../infrastructure/api'
 import { Avatar, Badge, Button, EmptyState, Field, Kpi, Modal, PageHeader, Switch, Tabs, Textarea, useToast } from '../../ui'
 import './messages.css'
 
@@ -28,7 +29,8 @@ export default function MessagesPage() {
   return (
     <div className="page">
       <PageHeader title="Mesajlar" subtitle="Hatırlatma, doğum günü ve bildirim mesajları" />
-      <div className="info-banner"><Info /><span>Demo modunda SMS gönderimi <b>simüle edilir</b>; WhatsApp butonları gerçek WhatsApp'ı hazır mesajla açar. Gerçek SMS için sağlayıcı (Netgsm, İleti Merkezi vb.) backend aşamasında bağlanacak.</span></div>
+      {/* Sunucu modunda SMS gerçek sağlayıcıdan gider; bu not yalnız tarayıcıda çalışan demo içindir. */}
+      {!apiMode && <div className="info-banner"><Info /><span>Bu demoda SMS gönderimi <b>simüle edilir</b>; WhatsApp butonları gerçek WhatsApp'ı hazır mesajla açar.</span></div>}
       <Tabs value={tab} onChange={setTab} options={[{ value: 'today', label: 'Gönderilecekler', count: due.length }, { value: 'templates', label: 'Şablonlar' }, { value: 'log', label: 'Gönderim kaydı' }]} />
       <div style={{ marginTop: 16 }}>
         {tab === 'today' && <TodayTab />}
