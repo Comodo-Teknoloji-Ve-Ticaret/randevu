@@ -65,6 +65,8 @@ export interface User {
   role: Role
   staffId?: ID
   branchIds: ID[]
+  /** Salon sahibinin kutucuklarla verdiği yetkiler; yoksa rolün varsayılanı (bkz. app/permissions.ts). Sahip için yok sayılır. */
+  perms?: string[]
 }
 
 export interface Staff {

@@ -25,7 +25,22 @@ public static class Permissions
         ["tenants"] = ["settings"],
     };
 
+    /// <summary>Salon sahibinin kutucuklarla verebileceği yetkiler (ön yüz permissions.ts ALL_PERMS).</summary>
+    public static readonly string[] SalonPerms = ["calendar", "calendar.all", "customers", "cash", "services", "staff", "stock", "packages", "messages", "reports", "settings", "commission.own"];
+
     public static bool Can(string role, string perm) => Matrix.TryGetValue(role, out var p) && p.Contains(perm);
+
+    /// <summary>
+    /// Kullanıcının geçerli yetkileri: salon sahibi ve Comodo yöneticisi her zaman rol tablosundan (kısıtlanamaz);
+    /// diğerlerinde salon sahibinin verdiği özel liste varsa o, yoksa rolün varsayılanı.
+    /// </summary>
+    public static IReadOnlySet<string> Effective(string role, IEnumerable<string>? custom) =>
+        role is "owner" or "platform" || custom is null
+            ? (Matrix.TryGetValue(role, out var p) ? p : []).ToHashSet()
+            : custom.Where(SalonPerms.Contains).ToHashSet();
+
+    public static bool CanWrite(IReadOnlySet<string> perms, string collection) =>
+        WritePerms.TryGetValue(collection, out var need) && need.Any(perms.Contains);
 
     public static bool CanWrite(string role, string collection) =>
         WritePerms.TryGetValue(collection, out var perms) && perms.Any(p => Can(role, p));

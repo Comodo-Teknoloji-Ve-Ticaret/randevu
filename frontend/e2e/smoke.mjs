@@ -670,6 +670,29 @@ const suites = {
     await step('Ayarlar: POS ekle', async () => { await clickText('POS & banka hesapları', '.set-nav button'); await setInput('.set-body .card-pad input', 'Akbank POS', 0); await clickText('Ekle', '.set-body .card-pad button'); await expectText('Akbank POS eklendi') })
     await step('Ayarlar: şube düzenle', async () => { await clickText('Şubeler & saatler', '.set-nav button'); await page.click('.set-body .list-item'); await sleep(300); await clickText('Kaydet', '.drawer-foot button'); await expectText('Şube kaydedildi') })
     await step('Ayarlar: kullanıcı ekle', async () => { await clickText('Kullanıcılar', '.set-nav button'); await clickText('Kullanıcı ekle', '.set-body button'); await fill('Ad Soyad', 'Yeni Resepsiyon'); await clickText('Kaydet', '.drawer-foot button'); await expectText('Yeni Resepsiyon') })
+    await step('Ayarlar: kutucukla yetki — kasası kapalı kullanıcı kasaya giremez', async () => {
+      await clickText('Kullanıcılar', '.set-nav button'); await clickText('Kullanıcı ekle', '.set-body button')
+      await fill('Ad Soyad', 'Kısıtlı Resepsiyon')
+      if (API) { await fill('Giriş e-postası', 'kisitli@salon.test'); await fill('Şifre', 'kisitli-sifre-1') }
+      const unticked = await page.evaluate(() => {
+        const item = [...document.querySelectorAll('.perm-item')].find((l) => l.querySelector('.perm-label')?.textContent === 'Kasa')
+        const box = item?.querySelector('input'); if (!box?.checked) return false
+        box.click(); return !box.checked
+      })
+      if (!unticked) throw new Error('Kasa kutucuğu kaldırılamadı')
+      await clickText('Kaydet', '.drawer-foot button'); await sleep(API ? 1200 : 400)
+      await expectText('Özel yetki')
+      const u = (await db()).users.find((x) => x.name === 'Kısıtlı Resepsiyon')
+      if (!u?.perms || u.perms.includes('cash') || !u.perms.includes('calendar')) throw new Error('yetkiler kaydedilmedi: ' + JSON.stringify(u?.perms))
+      if (API) {
+        const r = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'kisitli@salon.test', password: 'kisitli-sifre-1' }) })
+        const { token } = await r.json()
+        await page.evaluate((id, t) => { localStorage.setItem('makas:session', JSON.stringify({ userId: id, branchId: null, theme: 'light' })); localStorage.setItem('rh:token', t) }, u.id, token)
+      } else await page.evaluate((id) => localStorage.setItem('makas:session', JSON.stringify({ userId: id, branchId: null, theme: 'light' })), u.id)
+      await go('/kasa'); if (page.url().includes('/kasa')) throw new Error('kasaya girebildi')
+      await go('/takvim'); if (!page.url().includes('/takvim')) throw new Error('takvime giremedi')
+      await asUser('u_t_lara_owner'); await go('/ayarlar')
+    })
     await step('Ayarlar: online randevu', async () => { await clickText('Online randevu', '.set-nav button'); await page.click('.set-row .switch'); await sleep(200); await page.click('.set-row .switch') })
     await step('Ayarlar: QR kod telefonla okunur ve randevu linkini verir', async () => {
       await clickText('Salon', '.set-nav button'); await clickText('QR kod', '.set-body button'); await sleep(400)

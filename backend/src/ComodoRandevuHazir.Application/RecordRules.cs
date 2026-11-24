@@ -51,6 +51,15 @@ public static class RecordRules
                 if (Str(data, "kind") is not { } tk || !MessageKinds.Contains(tk) || Str(data, "body") is not { Length: > 0 and <= MaxSmsLength })
                     throw new ValidationException("Şablon geçersiz.");
                 break;
+            case "users":
+                if (data["perms"] is JsonArray list)
+                {
+                    foreach (var x in list)
+                        if (x is not JsonValue v || !v.TryGetValue<string>(out var perm) || !Permissions.SalonPerms.Contains(perm))
+                            throw new ValidationException($"Geçersiz yetki: {x?.ToJsonString()}");
+                    if (Str(data, "role") is "owner" or "platform") data.Remove("perms"); // sahip kısıtlanamaz
+                }
+                break;
             case "customers":
                 if (Str(data, "phone") is { Length: > 0 } phone && !Phone.IsNormalized(phone)) throw new ValidationException("Telefon numarası geçersiz.");
                 break;

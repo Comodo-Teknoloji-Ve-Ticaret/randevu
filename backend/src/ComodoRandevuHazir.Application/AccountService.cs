@@ -67,7 +67,7 @@ public class AccountService(IRecordStore records, ICredentialStore credentials, 
     {
         var target = await records.GetAsync("users", userId, ct) ?? throw new NotFoundException("Kullanıcı bulunamadı.");
         var role = Str(JsonNode.Parse(target.Data)!.AsObject(), "role");
-        var allowed = who.Role == "platform" || Permissions.Can(who.Role, "settings") && target.TenantId == who.TenantId && role != "platform";
+        var allowed = who.Role == "platform" || who.Role == "owner" && target.TenantId == who.TenantId && role != "platform";
         if (!allowed) throw new ForbiddenException("Bu işlem için yetkiniz yok.");
     }
 
@@ -103,7 +103,7 @@ public class AccountService(IRecordStore records, ICredentialStore credentials, 
 
     public async Task<IReadOnlyDictionary<string, string>> EmailsAsync(Identity who, CancellationToken ct)
     {
-        if (who.Role != "platform" && !Permissions.Can(who.Role, "settings")) throw new ForbiddenException("Bu işlem için yetkiniz yok.");
+        if (who.Role is not ("platform" or "owner")) throw new ForbiddenException("Bu işlem için yetkiniz yok.");
         var users = who.Role == "platform"
             ? (await records.ListAsync(null, ct)).Where(r => r.Collection == "users")
             : await records.ListCollectionAsync(who.TenantId!, "users", ct);

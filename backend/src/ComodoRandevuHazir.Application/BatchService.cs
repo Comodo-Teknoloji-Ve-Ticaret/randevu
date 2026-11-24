@@ -43,7 +43,9 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
             .ToDictionary(r => new RecordKey(r.Collection, r.Id));
         var platform = who.Role == "platform";
         var me = platform ? null : await records.GetAsync("users", who.UserId, ct);
-        var myStaffId = me is null ? null : JsonNode.Parse(me.Data)?["staffId"]?.GetValue<string>();
+        var meData = me is null ? null : JsonNode.Parse(me.Data);
+        var myStaffId = meData?["staffId"]?.GetValue<string>();
+        var perms = Permissions.Effective(who.Role, (meData?["perms"] as JsonArray)?.Select(x => x?.GetValue<string>()).OfType<string>().ToList());
 
         var pending = new List<PendingWrite>();
         foreach (var (collection, id, data) in ups)
@@ -51,7 +53,7 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
             var old = existing.GetValueOrDefault(new RecordKey(collection, id));
             var oldData = old is null ? null : JsonNode.Parse(old.Data)!.AsObject();
             var tenantId = platform ? PlatformTenant(collection, id, data) : ScopeToCaller(who.TenantId!, collection, id, data, old);
-            if (!platform) Authorize(who, myStaffId, collection, data, oldData);
+            if (!platform) Authorize(who, perms, myStaffId, collection, data, oldData);
             RecordRules.Validate(collection, data);
             pending.Add(new PendingWrite(collection, id, tenantId, data, oldData));
         }
@@ -64,7 +66,7 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
             if (!platform)
             {
                 if (old.TenantId != who.TenantId || key.Collection == "tenants") throw new ForbiddenException(NoAccess);
-                Authorize(who, myStaffId, key.Collection, null, oldData);
+                Authorize(who, perms, myStaffId, key.Collection, null, oldData);
             }
             pendingDeletes.Add(new PendingDelete(key, old.TenantId, oldData));
         }
@@ -131,7 +133,7 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
         return tenantId;
     }
 
-    private static void Authorize(Identity who, string? myStaffId, string collection, JsonObject? data, JsonObject? old)
+    private static void Authorize(Identity who, IReadOnlySet<string> perms, string? myStaffId, string collection, JsonObject? data, JsonObject? old)
     {
         var role = who.Role;
         var changed = Changed(old, data);
@@ -141,32 +143,34 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
                 if (data is null) throw new ForbiddenException(NoAccess);
                 if (changed.Intersect(Permissions.PlatformOnlyTenantFields).Any())
                     throw new ForbiddenException("Lisans ve paket bilgileri yalnız Comodo tarafından değiştirilebilir.");
-                if (Permissions.Can(role, "settings")) return;
-                if (role == "reception" && changed.All(Permissions.ReceptionTenantFields.Contains)) return;
+                if (perms.Contains("settings")) return;
+                // Stok/kasa/personel ekranları marka, ürün ve gider kategorisi listelerine ekleme yapar.
+                if ((perms.Contains("stock") || perms.Contains("cash") || perms.Contains("staff")) && changed.All(Permissions.ReceptionTenantFields.Contains)) return;
                 throw new ForbiddenException(NoPermission);
 
             case "staff":
-                if (Permissions.Can(role, "staff")) return;
+                if (perms.Contains("staff")) return;
                 // Hizmetler ekranı, hizmeti yapan personeli işaretler (yalnız serviceIds).
-                if (old is not null && data is not null && Permissions.Can(role, "services") && changed.All(f => f == "serviceIds")) return;
+                if (old is not null && data is not null && perms.Contains("services") && changed.All(f => f == "serviceIds")) return;
                 throw new ForbiddenException(NoPermission);
 
             case "users":
-                if (!Permissions.Can(role, "settings")) throw new ForbiddenException(NoPermission);
+                // Kullanıcı ve yetki yönetimi yalnız salon sahibinde: "Ayarlar" yetkisi verilmiş biri kendi yetkisini büyütemez.
+                if (role != "owner") throw new ForbiddenException("Kullanıcı ve yetkileri yalnız salon sahibi yönetebilir.");
                 if (data?["role"] is JsonValue r && r.TryGetValue<string>(out var newRole) && newRole is not ("owner" or "reception" or "staff"))
                     throw new ForbiddenException(NoPermission);
                 return;
 
             case "appointments" or "blocks":
-                if (!Permissions.Can(role, "calendar")) throw new ForbiddenException(NoPermission);
-                if (Permissions.Can(role, "calendar.all")) return;
+                if (!perms.Contains("calendar")) throw new ForbiddenException(NoPermission);
+                if (perms.Contains("calendar.all")) return;
                 // Personel yalnız kendi takvimine yazar.
                 if (myStaffId is null || StaffOf(data) is { } n && n != myStaffId || StaffOf(old) is { } o && o != myStaffId)
                     throw new ForbiddenException(NoPermission);
                 return;
 
             default:
-                if (!Permissions.CanWrite(role, collection)) throw new ForbiddenException(NoPermission);
+                if (!Permissions.CanWrite(perms, collection)) throw new ForbiddenException(NoPermission);
                 return;
         }
     }

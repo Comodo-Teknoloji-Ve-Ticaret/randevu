@@ -5,7 +5,7 @@ import { todayIstanbul } from '../domain/time'
 import type { DB } from '../application/db'
 import { httpStore, TenantScope, useDbSnapshot } from '../infrastructure'
 import { apiFetch, apiMode, authToken, setUnauthorizedHandler } from '../infrastructure/api'
-import { can, type Perm } from './permissions'
+import { canUser, type Perm } from './permissions'
 
 export type ThemePref = 'light' | 'dark' | 'system'
 const KEY = 'makas:session'
@@ -125,7 +125,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     logout,
     theme: saved.theme,
     setTheme: (theme) => setSaved((s) => ({ ...s, theme })),
-    can: (p) => (effectiveUser ? can(effectiveUser.role, p) : false),
+    can: (p) => (effectiveUser ? canUser(effectiveUser, p) : false),
   }
 
   if (!ready) return <div className="boot-loading" role="status">Yükleniyor…</div>

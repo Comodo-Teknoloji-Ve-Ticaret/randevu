@@ -2,7 +2,7 @@ import { Building2, Copy, CreditCard, Landmark, ExternalLink, Globe, Monitor, Mo
 import { useEffect, useState } from 'react'
 import { newId } from '../../application/db'
 import { platformService, slugify } from '../../application/platformService'
-import { ROLE_LABEL } from '../../app/permissions'
+import { defaultPerms, effectivePerms, PERM_GROUPS, ROLE_LABEL, userPermsToSave, type Perm } from '../../app/permissions'
 import { useSession } from '../../app/session'
 import { formatTRY } from '../../domain/money'
 import { bookingLink } from '../../domain/links'
@@ -34,12 +34,15 @@ export const bookingUrl = (slug: string) => bookingLink(slug, location, apiMode)
 
 export default function SettingsPage() {
   const [sec, setSec] = useState<Section>('salon')
+  const { user } = useSession()
+  // Kullanıcı ve yetki yönetimi yalnız salon sahibinde ("Ayarlar" yetkisi verilmiş biri yetki dağıtamaz)
+  const sections = SECTIONS.filter((s) => s.key !== 'users' || user?.role === 'owner')
   return (
     <div className="page">
       <PageHeader title="Ayarlar" subtitle="Salon bilgileri, şubeler, kullanıcılar ve online randevu" />
       <div className="set-layout">
         <nav className="set-nav card">
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <button key={s.key} className={cx(sec === s.key && 'on')} onClick={() => setSec(s.key)}><s.icon />{s.label}</button>
           ))}
         </nav>
@@ -47,7 +50,7 @@ export default function SettingsPage() {
           {sec === 'salon' && <SalonSection />}
           {sec === 'branches' && <BranchesSection />}
           {sec === 'accounts' && <AccountsSection />}
-          {sec === 'users' && <UsersSection />}
+          {sec === 'users' && user?.role === 'owner' && <UsersSection />}
           {sec === 'online' && <OnlineSection />}
           {sec === 'theme' && <ThemeSection />}
         </div>
@@ -217,12 +220,16 @@ function UsersSection() {
         <div><b>Resepsiyon</b><span>Takvim, müşteri, kasa, stok, mesaj</span></div>
         <div><b>Personel</b><span>Kendi takvimi ve primi</span></div>
       </div>
+      <p className="t-small muted" style={{ padding: '0 16px 8px' }}>Rol bir başlangıç şablonudur; kullanıcıyı açıp <b>Yetkiler</b> bölümünden kutucukları işaretleyerek kişiye özel yetki verebilirsiniz.</p>
       <div className="list">
         {users.map((u) => (
           <div key={u.id} className="list-item clickable" onClick={() => setEdit(u)}>
             <Avatar name={u.name} size={34} />
             <div style={{ flex: 1 }}><div className="t-strong">{u.name}{u.id === me?.id && <span className="muted t-small"> (siz)</span>}</div><div className="t-small muted">{u.branchIds.map((b) => repos.branches.get(b)?.name).join(', ')}{apiMode && <> · {emails[u.id] ?? <span style={{ color: 'var(--warning)' }}>giriş bilgisi yok</span>}</>}</div></div>
-            <Badge tone={u.role === 'owner' ? 'accent' : u.role === 'reception' ? 'info' : 'neutral'}>{ROLE_LABEL[u.role]}</Badge>
+            <div className="row" style={{ gap: 6 }}>
+              {u.perms && u.role !== 'owner' && <Badge tone="warning">Özel yetki</Badge>}
+              <Badge tone={u.role === 'owner' ? 'accent' : u.role === 'reception' ? 'info' : 'neutral'}>{ROLE_LABEL[u.role]}</Badge>
+            </div>
           </div>
         ))}
       </div>
@@ -238,14 +245,20 @@ function UserEditor({ user, email, onClose, onSaved }: { user?: User; email: str
   const branches = repos.branches.list()
   const staff = repos.staff.list({ active: true })
   const [f, setF] = useState({ name: user?.name ?? '', role: (user?.role ?? 'reception') as Exclude<Role, 'platform'>, staffId: user?.staffId ?? '', branchIds: user?.branchIds ?? branches.map((b) => b.id), email, password: '' })
+  const [perms, setPerms] = useState<Perm[]>(() => effectivePerms({ role: user?.role ?? 'reception', perms: user?.perms }))
   const [busy, setBusy] = useState(false)
+  const isOwnerRole = f.role === 'owner'
+  // Tüm takvimi görmüyorsa yalnız bağlı olduğu personelin takvimini görür → personel kaydı gerekir
+  const needsStaff = !isOwnerRole && perms.includes('calendar') && !perms.includes('calendar.all')
+  const setRole = (role: typeof f.role) => { setF({ ...f, role }); setPerms(defaultPerms(role)) }
+  const toggle = (p: Perm, on: boolean) => setPerms(on ? [...perms, p] : perms.filter((x) => x !== p))
   const isMe = user?.id === me?.id
   // Sunucu modu: e-posta değişti ya da şifre yazıldıysa giriş bilgisi güncellenir (ikisi birlikte gerekir).
   const loginChange = apiMode && (f.password !== '' || (f.email.trim() !== email && f.email.trim() !== ''))
   const loginInvalid = loginChange && (!f.email.includes('@') || f.password.length < 8)
 
   const save = async () => {
-    const saved = repos.users.upsert({ ...user, id: user?.id ?? newId('u_'), name: f.name.trim(), role: f.role, staffId: f.staffId || undefined, branchIds: f.branchIds })
+    const saved = repos.users.upsert({ ...user, id: user?.id ?? newId('u_'), name: f.name.trim(), role: f.role, staffId: f.staffId || undefined, branchIds: f.branchIds, perms: userPermsToSave(f.role, perms) })
     if (!loginChange) { onSaved(); return }
     setBusy(true)
     try {
@@ -264,7 +277,7 @@ function UserEditor({ user, email, onClose, onSaved }: { user?: User; email: str
       {user && !isMe && <Button variant="danger" onClick={() => { repos.users.remove(user.id); onSaved() }}>Kaldır</Button>}
       <div className="spacer" />
       <Button variant="ghost" onClick={onClose}>Vazgeç</Button>
-      <Button variant="primary" disabled={busy || !f.name.trim() || !f.branchIds.length || (f.role === 'staff' && !f.staffId) || loginInvalid} onClick={save}>Kaydet</Button>
+      <Button variant="primary" disabled={busy || !f.name.trim() || !f.branchIds.length || (needsStaff && !f.staffId) || loginInvalid} onClick={save}>Kaydet</Button>
     </>}>
       <Field label="Ad Soyad"><Input autoFocus value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
       {apiMode && <>
@@ -274,12 +287,12 @@ function UserEditor({ user, email, onClose, onSaved }: { user?: User; email: str
         </Field>
       </>}
       <Field label="Rol">
-        <Select value={f.role} disabled={isMe} onChange={(e) => setF({ ...f, role: e.target.value as typeof f.role })}>
+        <Select value={f.role} disabled={isMe} onChange={(e) => setRole(e.target.value as typeof f.role)}>
           <option value="owner">Salon Sahibi</option><option value="reception">Resepsiyon</option><option value="staff">Personel</option>
         </Select>
       </Field>
-      {f.role === 'staff' && (
-        <Field label="Personel kaydı" hint="Bu kullanıcı yalnızca bu personelin takvimini görür.">
+      {(needsStaff || f.role === 'staff') && (
+        <Field label="Personel kaydı" hint={needsStaff ? 'Bu kullanıcı yalnızca bu personelin takvimini görür.' : 'Primlerim sayfası bu personelin primini gösterir.'}>
           <Select value={f.staffId} onChange={(e) => { const s = staff.find((x) => x.id === e.target.value); setF({ ...f, staffId: e.target.value, name: f.name || s?.name || '', branchIds: s ? [s.branchId] : f.branchIds }) }}>
             <option value="">Seçin…</option>
             {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -296,7 +309,22 @@ function UserEditor({ user, email, onClose, onSaved }: { user?: User; email: str
           ))}
         </div>
       </Field>
-      <p className="t-small muted">Gerçek sürümde kullanıcıya e-posta/SMS ile davet gönderilir ve kendi şifresini belirler.</p>
+      <Field label="Yetkiler" hint={isOwnerRole ? 'Salon sahibi her şeye erişir; kısıtlanamaz.' : 'Rol seçince varsayılanlar gelir; istediğinizi açıp kapatın.'}>
+        <div className="perm-grid">
+          {PERM_GROUPS.map((g) => (
+            <div key={g.title} className="perm-group">
+              <b>{g.title}</b>
+              {g.items.map((i) => (
+                <label key={i.perm} className={cx('perm-item', isOwnerRole && 'locked')}>
+                  <input type="checkbox" checked={isOwnerRole || perms.includes(i.perm)} disabled={isOwnerRole} onChange={(e) => toggle(i.perm, e.target.checked)} />
+                  <span><span className="perm-label">{i.label}</span><span className="perm-hint">{i.hint}</span></span>
+                </label>
+              ))}
+            </div>
+          ))}
+        </div>
+      </Field>
+      {!isOwnerRole && <p className="t-small muted">Kullanıcı ekleme ve yetki verme yalnız salon sahibindedir.</p>}
     </Drawer>
   )
 }
