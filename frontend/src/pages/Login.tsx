@@ -1,4 +1,5 @@
 import { ArrowRight, Building2, CalendarCheck2, KeyRound, LogIn, Mail, Scissors, ShieldCheck, Smartphone, Wallet } from 'lucide-react'
+import logoUrl from '../assets/brand/logo.png'
 import { useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { tenantAccess } from '../application/platformService'
@@ -73,7 +74,7 @@ export default function Login() {
       <section className="login-hero">
         <div className="login-hero-inner">
           <div className="login-logo">
-            <span><CalendarCheck2 /></span> RandevunHazır
+            <img src={logoUrl} alt="RandevunHazır" />
           </div>
           <h1>Salonunuzun gününü<br />tek ekrandan yönetin.</h1>
           <p>Randevudan kasaya, stoktan prime kadar kuaförler için tasarlanmış yönetim paneli.</p>

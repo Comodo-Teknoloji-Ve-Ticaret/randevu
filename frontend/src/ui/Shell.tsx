@@ -1,7 +1,8 @@
 import {
   BarChart3, Building2, CalendarDays, ChevronDown, Gift, LogOut, MessageSquare, Monitor, Moon, MoreHorizontal,
-  CalendarCheck2, KeyRound, Package, RotateCcw, Scissors, Settings, Sun, TriangleAlert, UserRound, Users, Wallet, type LucideIcon,
+  KeyRound, Package, RotateCcw, Scissors, Settings, Sun, TriangleAlert, UserRound, Users, Wallet, type LucideIcon,
 } from 'lucide-react'
+import markUrl from '../assets/brand/mark.png'
 import { useMemo, useState, type ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { ROLE_LABEL, type Perm } from '../app/permissions'
@@ -54,12 +55,9 @@ const THEMES: { value: ThemePref; label: string; icon: LucideIcon }[] = [
 
 function Brand() {
   const { tenant } = useSession()
-  const color = tenant?.logoColor ?? 'var(--accent)'
   return (
     <div className="brand">
-      <div className="brand-mark" style={{ background: color }}>
-        <CalendarCheck2 />
-      </div>
+      <img className="brand-mark" src={markUrl} alt="" />
       <div className="brand-text">
         <b>{tenant?.name ?? 'RandevunHazır'}</b>
         <span>{tenant ? 'RandevunHazır' : 'Platform Yönetimi'}</span>

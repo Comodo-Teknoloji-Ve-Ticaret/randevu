@@ -4,8 +4,7 @@
   display: flex; flex-direction: column; padding: 16px 12px; position: sticky; top: 0; height: 100vh;
 }
 .brand { display: flex; align-items: center; gap: 11px; padding: 4px 8px 18px; min-width: 0; }
-.brand-mark { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #fff; flex: none; box-shadow: 0 8px 18px -8px currentColor; }
-.brand-mark svg { width: 19px; height: 19px; }
+.brand-mark { width: 44px; height: auto; flex: none; object-fit: contain; }
 .brand-text { min-width: 0; display: flex; flex-direction: column; }
 .brand-text b { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand-text span { font-size: 11px; color: var(--faint); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -52,7 +51,7 @@
   .topbar, .topbar:not(:has(.branch-btn)) { display: flex; padding: 0 12px 0 8px; height: 56px; }
   .topbar-mobile-brand { display: block; min-width: 0; }
   .topbar-mobile-brand .brand { padding: 0; }
-  .topbar-mobile-brand .brand-mark { width: 32px; height: 32px; border-radius: 10px; }
+  .topbar-mobile-brand .brand-mark { width: 38px; }
   .topbar-mobile-brand .brand-text span { display: none; }
   .topbar-user { display: block; }
   .topbar-user .user-meta, .topbar-user .chev { display: none; }

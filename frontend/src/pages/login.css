@@ -12,9 +12,9 @@
     radial-gradient(900px 500px at 120% 110%, #4a3a1c 0%, transparent 55%),
     linear-gradient(145deg, #18171c, #0b0b0e);
 }
-.login-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -0.02em; }
-.login-logo span { width: 40px; height: 40px; border-radius: 13px; background: rgba(255, 255, 255, 0.16); display: grid; place-items: center; backdrop-filter: blur(6px); }
-.login-logo svg { width: 20px; height: 20px; }
+/* Logo lacivert/yeşil: degrade zeminde okunsun diye beyaz kutuda */
+.login-logo { display: inline-flex; align-self: flex-start; align-items: center; background: #fff; border-radius: 16px; padding: 10px 18px; box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.35); }
+.login-logo img { height: 40px; width: auto; display: block; }
 .login-hero h1 { font-size: 42px; line-height: 1.08; margin: 64px 0 16px; letter-spacing: -0.035em; font-weight: 800; }
 .login-hero p { font-size: 16px; opacity: 0.8; max-width: 440px; }
 .login-hero ul { list-style: none; padding: 0; margin: 30px 0 0; display: flex; flex-direction: column; gap: 12px; }
