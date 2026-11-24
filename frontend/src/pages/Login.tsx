@@ -73,7 +73,7 @@ export default function Login() {
       <section className="login-hero">
         <div className="login-hero-inner">
           <div className="login-logo">
-            <span><CalendarCheck2 /></span> RandevuHazır
+            <span><CalendarCheck2 /></span> RandevunHazır
           </div>
           <h1>Salonunuzun gününü<br />tek ekrandan yönetin.</h1>
           <p>Randevudan kasaya, stoktan prime kadar kuaförler için tasarlanmış yönetim paneli.</p>

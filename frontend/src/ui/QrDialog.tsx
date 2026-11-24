@@ -38,7 +38,7 @@ export function QrDialog({ url, salon, slug, onClose }: { url: string; salon: st
 h1{font-size:34px;margin:24px 0 6px}p{font-size:20px;margin:0 0 28px;color:#444}.qr{width:120mm;height:120mm;margin:0 auto}.qr svg{width:100%;height:100%}
 .url{font-size:16px;margin-top:20px;word-break:break-all;color:#333}.by{margin-top:40px;font-size:12px;color:#888}</style></head>
 <body><h1>${esc(salon)}</h1><p>Online randevu için telefonunuzun kamerasıyla okutun</p><div class="qr">${svg}</div>
-<div class="url">${esc(url)}</div><div class="by">RandevuHazır ile online randevu</div>
+<div class="url">${esc(url)}</div><div class="by">RandevunHazır ile online randevu</div>
 <script>window.onload=function(){window.print()}</script></body></html>`)
     w.document.close()
   }

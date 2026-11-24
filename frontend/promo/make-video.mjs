@@ -1,4 +1,4 @@
-// RandevuHazır tanıtım videosu üreticisi: canlı siteyi gezer, ekranı kaydeder, Yelda sesiyle seslendirir, altyazı ekler.
+// RandevunHazır tanıtım videosu üreticisi: canlı siteyi gezer, ekranı kaydeder, Yelda sesiyle seslendirir, altyazı ekler.
 // Kullanım: FFMPEG=/yol/ffmpeg node promo/make-video.mjs   (çıktı: promo/out/randevuhazir-tanitim.mp4)
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -19,7 +19,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 /** Her parça: seslendirme metni + aynı anda ekranda yapılacak hareket. */
 const SEGMENTS = [
   { say: 'Randevular defterde, kasa hesap makinesinde, hatırlatmalar hep son dakikada mı?', act: () => card({ kicker: 'Kuaför · Berber · Güzellik salonu', title: 'Salonunuz hâlâ<br>defterle mi yönetiliyor?' }) },
-  { say: "Comodo'dan Randevu Hazır ile salonunuzun tamamı, tek ekranda.", act: () => card({ logo: true, title: 'RandevuHazır', sub: 'Salon yönetimi, tek ekranda' }) },
+  { say: "Comodo'dan Randevun Hazır ile salonunuzun tamamı, tek ekranda.", act: () => card({ logo: true, title: 'RandevunHazır', sub: 'Salon yönetimi, tek ekranda' }) },
   { say: 'Günlük takvimde tüm personelinizi ve randevularını yan yana görürsünüz.', act: async () => { await hideCard(); await sweepColumns() } },
   { say: 'Boş bir saate tıklayın, müşteriyi ve hizmeti seçin. Randevu saniyeler içinde hazır.', act: newAppointment },
   { say: 'Online gelen talepler onay listesine düşer; tek tıkla onaylarsınız.', act: approvePending },
@@ -32,7 +32,7 @@ const SEGMENTS = [
   { say: 'Yarınki randevulara hatırlatmalar, tek tıkla SMS ya da WhatsApp ile gider.', act: messages },
   { say: 'Ciro, doluluk ve en çok kazandıran hizmetler, raporlarda bir bakışta.', act: reports },
   { say: 'Bilgisayarda, tablette ve telefonda çalışır; birden fazla şubeyi tek yerden yönetirsiniz.', act: phoneCard },
-  { say: "Randevu Hazır. Salonunuz için, Comodo'dan.", act: () => card({ logo: true, title: 'RandevuHazır', sub: 'Salonunuz için, Comodo\'dan', foot: 'Demo: comodo-teknoloji-ve-ticaret.github.io/randevu' }) },
+  { say: "Randevun Hazır. Salonunuz için, Comodo'dan.", act: () => card({ logo: true, title: 'RandevunHazır', sub: 'Salonunuz için, Comodo\'dan', foot: 'Demo: comodo-teknoloji-ve-ticaret.github.io/randevu' }) },
 ]
 
 // ---------- Ses ----------

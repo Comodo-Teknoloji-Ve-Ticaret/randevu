@@ -30,8 +30,8 @@ public class PasswordService(ICredentialStore credentials, IPasswordResetStore r
         if (cred is null) return; // e-postanın kayıtlı olup olmadığı dışarı sızmaz
         var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
         await resets.SetAsync(new PasswordReset(cred.UserId, hasher.Hash(code), clock.Now.AddMinutes(CodeMinutes), 0), ct);
-        await email.SendAsync(new EmailMessage(cred.Email, "RandevuHazır şifre sıfırlama kodunuz",
-            $"Merhaba,\n\nRandevuHazır şifre sıfırlama kodunuz: {code}\n\nKod {CodeMinutes} dakika geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı dikkate almayın; şifreniz değişmez.\n\nRandevuHazır · Comodo"), ct);
+        await email.SendAsync(new EmailMessage(cred.Email, "RandevunHazır şifre sıfırlama kodunuz",
+            $"Merhaba,\n\nRandevunHazır şifre sıfırlama kodunuz: {code}\n\nKod {CodeMinutes} dakika geçerlidir. Bu isteği siz yapmadıysanız bu e-postayı dikkate almayın; şifreniz değişmez.\n\nRandevunHazır · Comodo"), ct);
     }
 
     public async Task ResetAsync(ResetPasswordRequest req, CancellationToken ct)

@@ -1,4 +1,4 @@
-# RandevuHazır API — çok aşamalı imaj
+# RandevunHazır API — çok aşamalı imaj
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ComodoRandevuHazir.slnx ./

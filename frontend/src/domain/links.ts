@@ -23,7 +23,7 @@ export function shortLinkRedirect(pathname: string, hash: string): string | null
 export function inviteMessage(p: { ownerName?: string; salon: string; inviteUrl: string; bookingUrl: string }): string {
   const hi = p.ownerName ? `Merhaba ${p.ownerName.split(' ')[0]},` : 'Merhaba,'
   return [
-    `${hi} ${p.salon} için RandevuHazır salon paneliniz hazır.`,
+    `${hi} ${p.salon} için RandevunHazır salon paneliniz hazır.`,
     `1) Panelinize bu bağlantıdan girip e-posta ve şifrenizi belirleyin: ${p.inviteUrl}`,
     `2) Müşterilerinize vereceğiniz online randevu linkiniz: ${p.bookingUrl}`,
     'Bu linki Instagram profilinize, WhatsApp İşletme profilinize ve Google İşletme sayfanıza ekleyebilirsiniz. Hizmetlerinizi ve personelinizi ekledikten sonra randevu almaya başlar.',

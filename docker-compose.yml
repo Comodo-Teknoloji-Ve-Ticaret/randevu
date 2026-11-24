@@ -1,4 +1,4 @@
-# RandevuHazır — yerel geliştirme ve sunucu kurulumu
+# RandevunHazır — yerel geliştirme ve sunucu kurulumu
 # Kullanım: docker compose up -d        (API: http://localhost:8080, veritabanı: localhost:5432)
 # Ayarlar .env dosyasından okunur (bkz. .env.example); sunucuda şifreleri mutlaka değiştirin.
 services:

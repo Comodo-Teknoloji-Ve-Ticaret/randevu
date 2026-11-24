@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Tanıtım sitesi → /tanitim/
+        run: node ../site/build.mjs && cp -R ../site/dist dist/tanitim
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist

@@ -1,4 +1,4 @@
-// RandevuHazır domain modeli.
+// RandevunHazır domain modeli.
 // Saatler: gün içi dakika (540 = 09:00). Tarihler: 'YYYY-MM-DD'. Tutarlar: kuruş (integer).
 
 export type ID = string

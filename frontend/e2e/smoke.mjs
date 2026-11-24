@@ -1,4 +1,4 @@
-// RandevuHazır uçtan uca duman testi: her modülde gerçek etkileşim, adım adım PASS/FAIL + konsol hataları
+// RandevunHazır uçtan uca duman testi: her modülde gerçek etkileşim, adım adım PASS/FAIL + konsol hataları
 import puppeteer from 'puppeteer-core'
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5317/'
 const only = process.argv[2]

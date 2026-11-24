@@ -1,4 +1,4 @@
-# RandevuHazır web — ön yüz derlenir, Caddy ile sunulur (otomatik HTTPS); /api istekleri API'ye iletilir.
+# RandevunHazır web — ön yüz derlenir, Caddy ile sunulur (otomatik HTTPS); /api istekleri API'ye iletilir.
 FROM node:24-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./

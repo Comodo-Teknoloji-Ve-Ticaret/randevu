@@ -60,8 +60,8 @@ function Brand() {
         <CalendarCheck2 />
       </div>
       <div className="brand-text">
-        <b>{tenant?.name ?? 'RandevuHazır'}</b>
-        <span>{tenant ? 'RandevuHazır · Salon Paneli' : 'Platform Yönetimi'}</span>
+        <b>{tenant?.name ?? 'RandevunHazır'}</b>
+        <span>{tenant ? 'RandevunHazır' : 'Platform Yönetimi'}</span>
       </div>
     </div>
   )

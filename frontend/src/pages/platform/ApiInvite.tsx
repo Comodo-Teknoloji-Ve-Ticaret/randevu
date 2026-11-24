@@ -58,7 +58,7 @@ export default function ApiInvite({ token }: { token: string }) {
       <div className="inv-card">
         <div className="inv-mark" style={{ background: t.logoColor }}><Scissors /></div>
         <div>
-          <p className="t-small muted">{businessTypeLabel(t.businessType)} · RandevuHazır salon paneli</p>
+          <p className="t-small muted">{businessTypeLabel(t.businessType)} · RandevunHazır salon paneli</p>
           <h1>{t.name} paneline hoş geldiniz</h1>
           <p className="muted" style={{ marginTop: 6 }}>İşletme sahibi hesabınızı oluşturun; bu e-posta ve şifreyle giriş yapacaksınız.</p>
         </div>

@@ -1,6 +1,6 @@
-# RandevuHazır: Sunucuya Kurulum ve Taşıma
+# RandevunHazır: Sunucuya Kurulum ve Taşıma
 
-Bu rehber, RandevuHazır'ı kendi sunucunuzda çalıştırmak için gereken adımları anlatır. Kurulum sonunda şunlar hazır olur:
+Bu rehber, RandevunHazır'ı kendi sunucunuzda çalıştırmak için gereken adımları anlatır. Kurulum sonunda şunlar hazır olur:
 
 - `https://alanadiniz` adresinde çalışan bir site
 - Otomatik HTTPS sertifikası
