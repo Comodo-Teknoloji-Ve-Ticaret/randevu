@@ -213,6 +213,10 @@ const SCENES = [
   { d: 4.6, f: sOutro },
 ]
 const FADE = 0.35
+// Seslendirme varsa sahne süreleri konuşmaya göre gelir (?durs=3.9,10.2,…); yoksa yukarıdaki varsayılanlar
+const DEFAULT_DURS = SCENES.map((s) => s.d)
+const DURS = (q.get('durs') || '').split(',').map(Number).filter((x) => x > 0)
+if (DURS.length === SCENES.length) DURS.forEach((d, i) => { SCENES[i].d = d })
 const TOTAL = SCENES.reduce((a, s) => a + s.d, 0)
 
 function drawAt(t) {
@@ -242,7 +246,7 @@ async function record({ fps = 30, bitrate = 1_600_000 } = {}) {
 
 await loadAll()
 drawAt(Number(q.get('t') || 0))
-Object.assign(window, { drawAt, record, TOTAL, ready: true })
+Object.assign(window, { drawAt, record, TOTAL, DEFAULT_DURS, ready: true })
 </script>
 </body>
 </html>

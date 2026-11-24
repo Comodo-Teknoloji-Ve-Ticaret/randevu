@@ -12,3 +12,4 @@ frontend/promo/out/
 .env
 site/dist/
 site/video/stills/
+site/video/.build/

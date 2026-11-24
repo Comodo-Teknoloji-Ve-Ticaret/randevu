@@ -15,11 +15,13 @@ Yayına alırken: site alan adının köküne, uygulama `/panel` gibi bir yola y
 
 ## Tanıtım videosu
 
-`assets/video/tanitim.mp4` (1920×1080, ~34 sn, sessiz) + `tanitim-poster.webp`. Sahneler `video/director.html`'de çizilir;
-ad, fiyat ve alan adı `site.config.json`'dan gelir. Ad değişince yeniden üretin:
+`assets/video/tanitim.mp4` (1920×1080, ~40 sn, seslendirmeli) + `tanitim-poster.webp`. Sahneler `video/director.html`'de çizilir;
+ad, fiyat ve alan adı `site.config.json`'dan, konuşma metni ve ses `video/narration.json`'dan gelir
+(macOS `say`, Yelda sesi). Sahne süreleri konuşmaya göre ayarlanır, ses tek parça karıştırılıp AAC'ye çevrilir ve
+`video/mux.swift` ile videoya eklenir. Metin, ad ya da fiyat değişince yeniden üretin:
 
 ```bash
-node site/video/render.mjs                  # ~10 sn; Chrome'un WebCodecs kodlayıcısıyla kare kare H.264 → MP4 (ffmpeg gerekmez)
+node site/video/render.mjs                  # ~20 sn, sesli (--silent: sessiz); Chrome'un WebCodecs kodlayıcısıyla kare kare H.264 → MP4 (ffmpeg gerekmez)
 node site/video/render.mjs --stills 3,10,31 # kontrol için tek kareler → site/video/stills/
 node site/build.mjs
 ```

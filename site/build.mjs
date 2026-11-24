@@ -22,6 +22,7 @@ const contact = [
 const values = {
   name: esc(cfg.name),
   domain: esc(cfg.domain),
+  domainUrl: esc(new URL(`https://${cfg.domain}`).host), // xn-- biçimi (önizleme botları/arama motorları için)
   company: esc(cfg.company),
   priceMonthly: esc(cfg.priceMonthly),
   priceNote: esc(cfg.priceNote),
@@ -41,6 +42,6 @@ rmSync(out, { recursive: true, force: true })
 mkdirSync(out, { recursive: true })
 writeFileSync(join(out, 'index.html'), html)
 cpSync(join(root, 'assets'), join(out, 'assets'), { recursive: true })
-writeFileSync(join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: https://${cfg.domain}/sitemap.xml\n`)
-writeFileSync(join(out, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://${cfg.domain}/</loc></url></urlset>\n`)
+writeFileSync(join(out, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: https://${values.domainUrl}/sitemap.xml\n`)
+writeFileSync(join(out, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://${values.domainUrl}/</loc></url></urlset>\n`)
 console.log(`Site hazır → ${out}`)

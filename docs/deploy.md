@@ -21,7 +21,7 @@ Dışarıya yalnızca 80 ve 443 numaralı portlar açılır. API ve veritabanın
 | Ne | Önerilen |
 |---|---|
 | Sunucu | Ubuntu 24.04, en az 2 GB RAM, 20 GB disk (Türkiye'de bir veri merkezi KVKK açısından avantajlıdır) |
-| Alan adı | Örneğin `randevuhazir.com.tr`. DNS'te **A kaydı** sunucunun IP adresini göstermelidir |
+| Alan adı | Örneğin `randevunhazır.com.tr`. DNS'te **A kaydı** sunucunun IP adresini göstermelidir |
 | Açık portlar | 80 ve 443. Sertifika alınırken 80 numaralı port gerekir |
 
 ## 2. Docker'ı kurun
@@ -52,7 +52,7 @@ Aşağıdaki değerlerin **hepsini** değiştirin:
 
 | Ayar | Ne yazılır |
 |---|---|
-| `DOMAIN` | Alan adınız, `https://` olmadan. Örnek: `randevuhazir.com.tr` |
+| `DOMAIN` | Alan adınız, `https://` olmadan. Türkçe karakter varsa `xn--` biçiminde yazın. Örnek: `randevunhazır.com.tr` → `xn--randevunhazr-c5b.com.tr` (çevirmek için: `python3 -c "print('randevunhazır.com.tr'.encode('idna').decode())"`) |
 | `DB_PASSWORD` | Güçlü bir veritabanı şifresi. Üretmek için: `openssl rand -hex 24` |
 | `JWT_KEY` | Oturum imzalama anahtarı. Üretmek için: `openssl rand -base64 48` |
 | `ADMIN_EMAIL` | Comodo yönetici hesabının e-postası |

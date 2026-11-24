@@ -98,7 +98,11 @@ p { margin: 0; }
 
 /* Video */
 .sec-video { padding-bottom: 64px; }
-.frame-video { max-width: 1040px; margin: 0 auto; background: #f6f5ff; }
+.frame-video { position: relative; max-width: 1040px; margin: 0 auto; background: #f6f5ff; }
+.sound-btn { position: absolute; z-index: 2; left: 14px; top: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px 9px 13px; border: 0; border-radius: 999px; background: rgba(23, 23, 28, .82); color: #fff; font: inherit; font-weight: 700; font-size: 14.5px; cursor: pointer; box-shadow: 0 8px 20px -8px rgba(0,0,0,.5); }
+.sound-btn:hover { background: #17171c; }
+.sound-btn[hidden] { display: none; }
+@media (min-width: 720px) { .sound-btn { left: 20px; top: 20px; font-size: 15.5px; padding: 11px 20px 11px 16px; } }
 .frame-video video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #f6f5ff; }
 
 /* Sorun → çözüm */

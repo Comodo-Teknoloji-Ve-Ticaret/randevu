@@ -7,12 +7,12 @@
   <meta name="description" content="{{name}}: kuaför, berber ve güzellik salonları için online randevu, SMS hatırlatma, kasa, prim, stok ve raporlar tek ekranda. Aylık ₺{{priceMonthly}}, tüm özellikler dahil." />
   <meta name="theme-color" content="#6c5ce7" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="canonical" href="https://{{domain}}/" />
+  <link rel="canonical" href="https://{{domainUrl}}/" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="tr_TR" />
   <meta property="og:title" content="{{name}} · Salonunuz tek ekranda" />
   <meta property="og:description" content="Online randevu, hatırlatma, kasa, prim, stok ve raporlar. Aylık ₺{{priceMonthly}}, tüm özellikler dahil." />
-  <meta property="og:image" content="https://{{domain}}/assets/shots/takvim.webp" />
+  <meta property="og:image" content="https://{{domainUrl}}/assets/shots/takvim.webp" />
   <link rel="preload" href="assets/fonts/jakarta-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="assets/site.css" />
 </head>
@@ -108,12 +108,13 @@
     <section class="sec sec-video" id="video">
       <div class="wrap">
         <div class="sec-head">
-          <p class="eyebrow">30 saniyede</p>
+          <p class="eyebrow">40 saniyede</p>
           <h2>{{name}} nasıl çalışır?</h2>
           <p class="sub">Müşterinin randevu almasından gün sonu raporuna kadar.</p>
         </div>
         <figure class="frame frame-video">
-          <video id="promo" controls muted loop playsinline preload="none" width="1920" height="1080" poster="assets/video/tanitim-poster.webp" aria-label="{{name}} tanıtım videosu (sessiz)">
+          <button type="button" class="sound-btn" id="soundBtn"><svg class="ic" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>Sesli izle</button>
+          <video id="promo" controls muted loop playsinline preload="none" width="1920" height="1080" poster="assets/video/tanitim-poster.webp" aria-label="{{name}} tanıtım videosu">
             <source src="assets/video/tanitim.mp4" type="video/mp4" />
           </video>
         </figure>
@@ -316,6 +317,13 @@
           else if (!e.isIntersecting && !v.paused) { v.dataset.auto = '1'; v.pause(); }
         });
       }, { threshold: 0.5 }).observe(v);
+    })();
+    // "Sesli izle": tarayıcılar sesli otomatik oynatmaya izin vermez; tıklayınca baştan, sesli oynat
+    (function () {
+      var v = document.getElementById('promo'), b = document.getElementById('soundBtn');
+      if (!v || !b) return;
+      b.addEventListener('click', function () { v.muted = false; v.currentTime = 0; var p = v.play(); if (p && p.catch) p.catch(function () {}); b.hidden = true; });
+      v.addEventListener('volumechange', function () { if (!v.muted) b.hidden = true; });
     })();
   </script>
 </body>
