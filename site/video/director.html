@@ -33,7 +33,7 @@ const load = (src) => new Promise((res, rej) => { const i = new Image(); i.onloa
 const IMG = {}
 async function loadAll() {
   const list = {
-    icon: '../assets/favicon.svg',
+    logo: 'brand/logo.png', logoCom: 'brand/logo-com.png',
     b1: 'frames/b1-hizmet.png', b2: 'frames/b2-saat.png', b3: 'frames/b4-form.png', b4: 'frames/b5-tamam.png',
     cal: '../assets/shots/takvim.webp', msg: '../assets/shots/mesajlar.webp', cash: '../assets/shots/kasa.webp', rep: '../assets/shots/raporlar.webp',
   }
@@ -67,7 +67,6 @@ function background(t) {
   g.fillStyle = b; g.fillRect(0, 0, W, H)
 }
 
-function icon(x, y, size) { g.drawImage(IMG.icon, x, y, size, size) }
 
 function pill(label, x, y, { bg = C.soft, color = C.accent, font = F(700, 26), padX = 22, h = 52 } = {}) {
   g.font = font; const w = g.measureText(label).width + padX * 2
@@ -117,11 +116,8 @@ function sIntro(t, d) {
   const a = ease(t / 0.9)
   const cx = W / 2
   g.save(); g.globalAlpha = a
-  const s = 150 * (0.85 + 0.15 * ease(t / 0.8))
-  shadow(50, 20, 'rgba(108,92,231,0.45)'); icon(cx - s / 2, 300 - s / 2 + 40, s); noShadow()
-  g.restore()
-  g.save(); g.globalAlpha = ease((t - 0.35) / 0.7)
-  text(NAME, cx, 560 + (1 - ease((t - 0.35) / 0.7)) * 24, { font: F(800, 120), align: 'center' })
+  const lw = 1240 * (0.94 + 0.06 * ease(t / 0.9)), lh = lw * (IMG.logo.height / IMG.logo.width)
+  g.drawImage(IMG.logo, cx - lw / 2, 380 - lh / 2, lw, lh)
   g.restore()
   g.save(); g.globalAlpha = ease((t - 0.9) / 0.7)
   text('Salonunuzun randevusu, kasası ve müşterisi', cx, 670, { font: F(500, 46), color: C.muted, align: 'center' })
@@ -181,8 +177,8 @@ function sDesk(key, label, title, focus, zoom) {
 function sOutro(t, d) {
   const cx = W / 2
   g.save(); g.globalAlpha = ease(t / 0.7)
-  shadow(40, 16, 'rgba(108,92,231,0.4)'); icon(cx - 60, 230, 120); noShadow()
-  text(NAME, cx, 470, { font: F(800, 104), align: 'center' })
+  const lw = 1080, lh = lw * (IMG.logoCom.height / IMG.logoCom.width)
+  g.drawImage(IMG.logoCom, cx - lw / 2, 330 - lh / 2, lw, lh)
   g.restore()
   g.save(); g.globalAlpha = ease((t - 0.4) / 0.7)
   text(`Aylık ₺${PRICE} · Tüm özellikler dahil`, cx, 570, { font: F(600, 46), color: C.muted, align: 'center' })
@@ -195,9 +191,7 @@ function sOutro(t, d) {
   waGlyph(-w / 2 + 44, -20, 40)
   text(label, -w / 2 + 104, 2, { font: F(800, 42), color: '#fff', base: 'middle' })
   g.restore()
-  g.save(); g.globalAlpha = ease((t - 1.2) / 0.7)
-  text(DOMAIN, cx, 860, { font: F(600, 34), color: C.accent, align: 'center' })
-  g.restore()
+  // alan adı logonun içinde (.com)
 }
 
 const WA = new Path2D('M12.04 2a9.9 9.9 0 0 0-8.5 14.98L2 22l5.17-1.5A9.92 9.92 0 1 0 12.04 2Zm0 18.13a8.2 8.2 0 0 1-4.2-1.15l-.3-.18-3.07.89.9-3-.2-.31a8.22 8.22 0 1 1 6.87 3.75Zm4.5-6.15c-.25-.12-1.46-.72-1.69-.8-.23-.08-.39-.12-.55.12-.17.25-.64.8-.78.97-.14.16-.29.18-.53.06a6.74 6.74 0 0 1-3.37-2.94c-.25-.44.25-.41.72-1.36.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47a.9.9 0 0 0-.65.3 2.74 2.74 0 0 0-.86 2.04 4.77 4.77 0 0 0 1 2.53 10.9 10.9 0 0 0 4.18 3.69c1.55.67 2.16.73 2.93.61.47-.07 1.46-.6 1.66-1.17.21-.58.21-1.07.15-1.17-.06-.1-.22-.17-.47-.29Z')

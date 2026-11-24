@@ -53,6 +53,9 @@ p { margin: 0; }
 .top { position: sticky; top: 0; z-index: 20; background: rgba(255, 255, 255, .86); backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px); border-bottom: 1px solid var(--line); }
 .top-in { display: flex; align-items: center; gap: 24px; height: 64px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; color: var(--text); text-decoration: none; letter-spacing: -0.02em; }
+.brand-logo { height: 46px; width: auto; }
+.brand-logo-foot { height: 44px; width: auto; }
+@media (max-width: 420px) { .brand-logo { height: 38px; } }
 .nav { display: none; gap: 26px; margin-left: auto; }
 .nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 15px; }
 .nav a:hover { color: var(--text); }
