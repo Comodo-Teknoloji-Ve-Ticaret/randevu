@@ -29,7 +29,7 @@ const SEGMENTS = [
   { say: 'Gün sonunda kimin ne ödediğini ve kasada ne kaldığını net görürsünüz.', act: dayEnd },
   { say: 'Personel primleri; hizmet, ürün ve paket bazında otomatik hesaplanır.', act: staffPerf },
   { say: "Ürün listenizi Excel'den tek seferde aktarın; kritik seviyedeki ürünler sizi uyarır.", act: stockImport },
-  { say: 'Yarınki randevulara hatırlatmalar, tek tıkla SMS ya da WhatsApp ile gider.', act: messages },
+  { say: 'Yarınki randevulara hatırlatmalar, WhatsApp ile tek ekrandan gider.', act: messages },
   { say: 'Ciro, doluluk ve en çok kazandıran hizmetler, raporlarda bir bakışta.', act: reports },
   { say: 'Bilgisayarda, tablette ve telefonda çalışır; birden fazla şubeyi tek yerden yönetirsiniz.', act: phoneCard },
   { say: "Randevun Hazır. Salonunuz için, Comodo'dan.", act: () => card({ logo: true, title: 'RandevunHazır', sub: 'Salonunuz için, Comodo\'dan', foot: 'Demo: comodo-teknoloji-ve-ticaret.github.io/randevu' }) },

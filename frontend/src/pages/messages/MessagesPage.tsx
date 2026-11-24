@@ -1,4 +1,4 @@
-import { BellRing, Cake, Check, Info, MessageCircle, MessageSquareText, Send, SkipForward, Smartphone } from 'lucide-react'
+import { BellRing, Cake, Check, MessageCircle, MessageSquareText, Send, SkipForward } from 'lucide-react'
 import { useState } from 'react'
 import { messageService } from '../../application/messageService'
 import { formatPhone } from '../../domain/phone'
@@ -7,19 +7,16 @@ import { addDays, formatDate, todayIstanbul, toHHMM } from '../../domain/time'
 import type { Appointment, MessageKind, MessageLog, MessageTemplate } from '../../domain/types'
 import { useSession } from '../../app/session'
 import { useRepos } from '../../infrastructure'
-import { apiMode } from '../../infrastructure/api'
 import { Avatar, Badge, Button, EmptyState, Field, Kpi, Modal, PageHeader, Switch, Tabs, Textarea, useToast } from '../../ui'
 import './messages.css'
 
 const KIND_LABEL: Record<MessageKind, string> = { confirm: 'Onay', reminder: 'Hatırlatma', cancel: 'İptal', birthday: 'Doğum günü', winback: 'Geri kazanım' }
 
 const STATUS: Record<MessageLog['status'], { label: string; tone: 'info' | 'success' | 'danger' | 'neutral' }> = {
-  simulated: { label: 'SMS (demo)', tone: 'info' },
-  queued: { label: 'SMS sırada', tone: 'neutral' },
-  sent: { label: 'SMS iletildi', tone: 'success' },
-  failed: { label: 'SMS iletilemedi', tone: 'danger' },
   opened: { label: 'WhatsApp açıldı', tone: 'success' },
 }
+/** Eski demo kayıtlarında (SMS dönemi) başka durumlar olabilir: gösterim bozulmasın. */
+const statusOf = (s: string) => STATUS[s as MessageLog['status']] ?? { label: 'Gönderildi', tone: 'neutral' as const }
 
 export default function MessagesPage() {
   const [tab, setTab] = useState<'today' | 'templates' | 'log'>('today')
@@ -29,8 +26,7 @@ export default function MessagesPage() {
   return (
     <div className="page">
       <PageHeader title="Mesajlar" subtitle="Hatırlatma, doğum günü ve bildirim mesajları" />
-      {/* Sunucu modunda SMS gerçek sağlayıcıdan gider; bu not yalnız tarayıcıda çalışan demo içindir. */}
-      {!apiMode && <div className="info-banner"><Info /><span>Bu demoda SMS gönderimi <b>simüle edilir</b>; WhatsApp butonları gerçek WhatsApp'ı hazır mesajla açar.</span></div>}
+      <div className="info-banner"><MessageCircle /><span>Mesajlar <b>WhatsApp</b> ile gider: düğmeye basınca WhatsApp hazır mesajla açılır, göndermek için WhatsApp'ta gönder tuşuna basarsınız.</span></div>
       <Tabs value={tab} onChange={setTab} options={[{ value: 'today', label: 'Gönderilecekler', count: due.length }, { value: 'templates', label: 'Şablonlar' }, { value: 'log', label: 'Gönderim kaydı' }]} />
       <div style={{ marginTop: 16 }}>
         {tab === 'today' && <TodayTab />}
@@ -52,8 +48,11 @@ function TodayTab() {
   const sentToday = repos.messages.list().filter((m) => m.at.slice(0, 10) === today).length
   const [waQueue, setWaQueue] = useState<Appointment[] | null>(null)
   const openWa = (kind: MessageKind, target: { appointmentId?: string; customerId?: string }) => {
-    const r = ms.send(kind, target, 'whatsapp')
-    if (r.url) window.open(r.url, '_blank', 'noopener')
+    try {
+      window.open(ms.send(kind, target).url, '_blank', 'noopener')
+    } catch (e) {
+      toast((e as Error).message, 'error')
+    }
   }
   return (
     <div className="stack" style={{ gap: 16 }}>
@@ -66,8 +65,7 @@ function TodayTab() {
         <div className="card-head">
           <h3>Yarınki randevular · {formatDate(addDays(today, 1), { weekday: true })}</h3>
           <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <Button icon={MessageCircle} disabled={!due.length} onClick={() => setWaQueue(due)}>Tümüne WhatsApp</Button>
-            <Button variant="primary" icon={Smartphone} disabled={!due.length} onClick={() => toast(`${ms.remindAll()} hatırlatma SMS'i gönderildi (simülasyon)`)}>Tümüne SMS gönder</Button>
+            <Button variant="primary" icon={MessageCircle} disabled={!due.length} onClick={() => setWaQueue(due)}>Tümüne WhatsApp</Button>
           </div>
         </div>
         <div className="list" style={{ marginTop: 8 }}>
@@ -84,7 +82,6 @@ function TodayTab() {
                   <div className="t-small muted">{toHHMM(a.start)} · {a.items.map((i) => repos.services.get(i.serviceId)?.name).join(', ')} · {repos.staff.get(a.staffId)?.name.split(' ')[0]}</div>
                 </div>
                 <Button size="sm" icon={MessageCircle} onClick={() => openWa('reminder', { appointmentId: a.id })}>WhatsApp</Button>
-                <Button size="sm" icon={Smartphone} onClick={() => { ms.send('reminder', { appointmentId: a.id }, 'sms'); toast(`${c.name.split(' ')[0]}: SMS gönderildi`) }}>SMS</Button>
               </div>
             )
           })}
@@ -111,6 +108,7 @@ function TodayTab() {
 /** Tarayıcılar tek tıkla birden çok pencere açmayı engeller; bu yüzden her müşteri için ayrı (bireysel) sohbet sırayla açılır. */
 function WhatsAppQueue({ queue, onClose }: { queue: Appointment[]; onClose: (sent: number) => void }) {
   const repos = useRepos()
+  const toast = useToast()
   const ms = messageService(repos)
   const [i, setI] = useState(0)
   const [sent, setSent] = useState(0)
@@ -119,9 +117,12 @@ function WhatsAppQueue({ queue, onClose }: { queue: Appointment[]; onClose: (sen
   const p = a ? ms.preview('reminder', { appointmentId: a.id }) : null
   const next = () => setI((x) => x + 1)
   const send = () => {
-    const r = ms.send('reminder', { appointmentId: a.id }, 'whatsapp')
-    if (r.url) window.open(r.url, '_blank', 'noopener')
-    setSent((n) => n + 1)
+    try {
+      window.open(ms.send('reminder', { appointmentId: a.id }).url, '_blank', 'noopener')
+      setSent((n) => n + 1)
+    } catch (e) {
+      toast((e as Error).message, 'error')
+    }
     next()
   }
   return (
@@ -171,9 +172,9 @@ function TemplatesTab() {
         <div className="card card-pad stack">
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <h3 style={{ fontSize: 16 }}>{sel.name}</h3>
-            <div className="row"><span className="t-small muted">Otomatik gönderim</span><Switch on={sel.enabled} onChange={(v) => { const t = repos.templates.upsert({ ...sel, enabled: v }); setSel(t) }} /></div>
+            <div className="row"><span className="t-small muted">Kullanımda</span><Switch on={sel.enabled} onChange={(v) => { const t = repos.templates.upsert({ ...sel, enabled: v }); setSel(t) }} /></div>
           </div>
-          <Field label="Mesaj metni" hint={`${body.length} karakter · ${Math.max(1, Math.ceil(body.length / 155))} SMS`}>
+          <Field label="Mesaj metni" hint={`${body.length} karakter`}>
             <Textarea rows={4} value={body} onChange={(e) => setBody(e.target.value)} />
           </Field>
           <div className="var-chips">
@@ -203,15 +204,14 @@ function LogTab() {
           const c = m.customerId ? repos.customers.get(m.customerId) : undefined
           return (
             <div key={m.id} className="list-item" style={{ alignItems: 'flex-start' }}>
-              <span className={`log-ch ${m.channel}`}>{m.channel === 'sms' ? <Smartphone /> : <MessageCircle />}</span>
+              <span className={`log-ch ${m.channel}`}><MessageCircle /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="row" style={{ gap: 6 }}><b>{c?.name ?? formatPhone(m.to)}</b><Badge>{KIND_LABEL[m.kind]}</Badge></div>
                 <p className="t-small muted" style={{ marginTop: 2 }}>{m.body}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div className="t-small muted">{formatDate(m.at.slice(0, 10))} {m.at.slice(11, 16)}</div>
-                <Badge tone={STATUS[m.status].tone}>{STATUS[m.status].label}</Badge>
-                {m.status === 'failed' && m.error && <span className="t-small" style={{ color: 'var(--danger)' }}>{m.error}</span>}
+                <Badge tone={statusOf(m.status).tone}>{statusOf(m.status).label}</Badge>
               </div>
             </div>
           )

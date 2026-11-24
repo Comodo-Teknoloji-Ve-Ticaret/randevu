@@ -31,7 +31,7 @@ export function privacyNotice(s: SalonInfo): LegalSection[] {
     },
     {
       title: 'Kimlere aktarılır?',
-      body: 'Verileriniz yalnızca yukarıdaki amaçlar için ve gerektiği ölçüde; randevu ve salon yönetimi yazılımını sağlayan ve verileri barındıran hizmet sağlayıcımıza (Comodo Teknoloji ve Ticaret, veri işleyen sıfatıyla), SMS/ileti hizmet sağlayıcılarına ve talep hâlinde yetkili kamu kurum ve kuruluşlarına aktarılabilir. Verileriniz yurt dışına aktarılmaz.',
+      body: `Verileriniz yalnızca yukarıdaki amaçlar için ve gerektiği ölçüde; randevu ve salon yönetimi yazılımını sağlayan ve verileri barındıran hizmet sağlayıcımıza (Comodo Teknoloji ve Ticaret, veri işleyen sıfatıyla) ve talep hâlinde yetkili kamu kurum ve kuruluşlarına aktarılabilir. Verileriniz Türkiye'deki sunucularda saklanır. Randevu bilgilendirme ve (izin verdiyseniz) kampanya mesajları WhatsApp ile gönderildiğinden, mesaj içeriği ve telefon numaranız WhatsApp (Meta) altyapısı üzerinden iletilir; bu altyapının sunucuları yurt dışında bulunabilir.`,
     },
     {
       title: 'Nasıl toplanır?',
@@ -49,7 +49,7 @@ export function privacyNotice(s: SalonInfo): LegalSection[] {
 }
 
 export function marketingConsentText(s: SalonInfo): string {
-  return `${s.name} tarafından kampanya, indirim, fırsat, doğum günü kutlaması ve yeni hizmet duyurularının cep telefonuma SMS ve WhatsApp yoluyla gönderilmesine ve bu amaçla ad soyad ve telefon bilgimin işlenmesine açık rıza veriyorum. Bu izin isteğe bağlıdır; vermemeniz randevu almanızı etkilemez. İzninizi dilediğiniz zaman, ücretsiz olarak, salona bildirerek veya mesajlardaki ret yöntemini kullanarak geri alabilirsiniz.`
+  return `${s.name} tarafından kampanya, indirim, fırsat, doğum günü kutlaması ve yeni hizmet duyurularının cep telefonuma WhatsApp yoluyla gönderilmesine ve bu amaçla ad soyad ve telefon bilgimin işlenmesine açık rıza veriyorum. Bu izin isteğe bağlıdır; vermemeniz randevu almanızı etkilemez. İzninizi dilediğiniz zaman, ücretsiz olarak, salona bildirerek veya mesajlardaki ret yöntemini kullanarak geri alabilirsiniz.`
 }
 
 export type LegalDoc = 'privacy' | 'consent'

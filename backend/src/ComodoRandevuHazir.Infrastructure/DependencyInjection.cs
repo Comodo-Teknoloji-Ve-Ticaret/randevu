@@ -21,19 +21,6 @@ public static class DependencyInjection
         .AddSingleton<ITokenIssuer, JwtTokenIssuer>()
         .AddScoped<IRecordStore, RecordStore>()
         .AddScoped<ICredentialStore, CredentialStore>()
-        // SMS: Sms:Provider = simulation (varsayılan) | netgsm | iletimerkezi
-        .AddSingleton<SimulatedSmsSender>()
-        .AddSingleton<ISmsSender>(sp =>
-        {
-            var o = sp.GetRequiredService<IConfiguration>().GetSection("Sms").Get<SmsOptions>() ?? new SmsOptions();
-            var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
-            return o.Provider.ToLowerInvariant() switch
-            {
-                "netgsm" => new NetgsmSmsSender(http, o),
-                "iletimerkezi" => new IletiMerkeziSmsSender(http, o),
-                _ => sp.GetRequiredService<SimulatedSmsSender>(),
-            };
-        })
         .AddScoped<IPasswordResetStore, PasswordResetStore>()
         .AddSingleton<SimulatedEmailSender>()
         .AddSingleton<IEmailSender>(sp => sp.GetRequiredService<IConfiguration>().GetSection("Smtp").Get<SmtpOptions>() is { Host.Length: > 0 } smtp

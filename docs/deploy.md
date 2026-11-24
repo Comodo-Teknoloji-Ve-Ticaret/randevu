@@ -92,28 +92,11 @@ curl https://ALANADINIZ/api/health        # {"status":"ok"} dönmeli
 
 > Gerçek sunucuda demo hesapları ve "Demo verisini sıfırla" düğmesi görünmez; `docker-compose.prod.yml` bunları kapatır.
 
-## 6a. SMS ve e-posta (gerçek gönderim)
+## 6a. E-posta (şifre sıfırlama) ve mesajlar
 
-Bu ayarlar boş bırakılırsa SMS ve e-posta **gönderilmez**. Mesajlar yalnızca kayda geçer ve kayıtta "SMS (demo)" olarak görünür. Gerçek gönderim için `.env` dosyasını doldurup `up -d` komutunu tekrar çalıştırın.
+**Mesajlar** (randevu hatırlatma, doğum günü kutlaması) **WhatsApp** ile gönderilir: Mesajlar sayfasında düğmeye basınca salonun telefonunda WhatsApp hazır mesajla açılır, gönder tuşuna salon basar. Sunucuda ayrıca bir ayar gerekmez; sistem SMS göndermez. Hatırlatma için müşterinin ileti izni, doğum günü/kampanya mesajı için ayrıca açık rızası gerekir.
 
-**SMS (Netgsm veya İleti Merkezi'nden biri)**
-
-| Ayar | Netgsm | İleti Merkezi |
-|---|---|---|
-| `SMS_PROVIDER` | `netgsm` | `iletimerkezi` |
-| `SMS_SENDER` | BTK onaylı gönderici adınız (başlık) | Aynı. Onay gelene kadar test için `APITEST` |
-| `SMS_USERNAME` / `SMS_PASSWORD` | Netgsm abone numaranız ve API şifreniz | — |
-| `SMS_API_KEY` / `SMS_API_HASH` | — | Panel > Ayarlar > Güvenlik > API Erişimi'ndeki **anahtar** ve **hash**. Aynı ekranda "API erişimine izin ver" seçeneği açık olmalıdır |
-
-Nasıl çalışır:
-
-- **Hizmet mesajları** (randevu onayı, hatırlatma, iptal) İYS dışında gönderilir.
-- **Kampanya ve doğum günü mesajları** İYS kapsamında, "bireysel" olarak gönderilir.
-- Kayıtta her mesajın durumu görünür: **SMS iletildi** ya da **SMS iletilemedi** (nedeniyle birlikte, örneğin "Gönderici adı tanımlı değil").
-
-> **Netgsm kullanıyorsanız:** Kampanya mesajlarında İYS filtresi olarak `11` (bireysel) gönderilir. Bu değeri Netgsm desteğiyle teyit edin. Farklıysa `.env` dosyasına `Sms__NetgsmIysFilter=<değer>` satırını ekleyin.
-
-**E-posta** (şifre sıfırlama kodları): kurumsal e-posta hesabınızın SMTP bilgilerini girin. Bunlar `SMTP_HOST`, `SMTP_PORT` (genellikle 587), `SMTP_USER`, `SMTP_PASSWORD` ve `SMTP_FROM` alanlarıdır.
+**E-posta** (şifre sıfırlama kodları): Ayarlar boş bırakılırsa e-posta gönderilmez (kod yalnız API günlüğünde görünür). Kurumsal e-posta hesabınızın SMTP bilgilerini girin. Bunlar `SMTP_HOST`, `SMTP_PORT` (genellikle 587), `SMTP_USER`, `SMTP_PASSWORD` ve `SMTP_FROM` alanlarıdır.
 
 ---
 

@@ -324,12 +324,12 @@ export interface MessageLog {
   customerId: ID | null
   appointmentId?: ID
   kind: MessageKind
-  channel: 'sms' | 'whatsapp'
+  /** Mesajlar yalnız WhatsApp ile gider (salonun telefonundan, elle). */
+  channel: 'whatsapp'
   to: string
   body: string
-  /** simulated: demo; queued/sent/failed: gerçek SMS sağlayıcısı; opened: WhatsApp elle açıldı */
-  status: 'simulated' | 'opened' | 'queued' | 'sent' | 'failed'
-  error?: string
+  /** opened: WhatsApp hazır mesajla açıldı */
+  status: 'opened'
   at: string
 }
 

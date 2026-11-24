@@ -124,7 +124,7 @@ export default function BookingPage() {
           <div className="bk-done">
             <div className="bk-check"><Check /></div>
             <h2>{result.status === 'pending' ? 'Talebiniz alındı!' : 'Randevunuz oluşturuldu!'}</h2>
-            <p className="muted">{result.status === 'pending' ? 'Salon onayladığında size SMS ile bilgi verilecek.' : 'Sizi bekliyoruz.'}</p>
+            <p className="muted">{result.status === 'pending' ? 'Randevunuz salon onayladığında kesinleşir. Gerekirse salon sizinle telefon ya da WhatsApp üzerinden iletişime geçer.' : 'Sizi bekliyoruz.'}</p>
             <div className="bk-ticket">
               <div><span>Randevu kodu</span><b className="bk-code">{result.code}</b></div>
               <div><span>Tarih</span><b>{formatDate(date, { weekday: true })}</b></div>
@@ -233,7 +233,7 @@ export default function BookingPage() {
                 <Field label="Cep telefonu" hint="Randevu bilgisi bu numaraya gönderilir."><Input icon={Phone} value={phone} onChange={(e) => { setPhone(e.target.value); setError(null) }} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" /></Field>
                 <Field label="Not (isteğe bağlı)"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Örn. saç uzunluğum omuz hizasında" /></Field>
                 <label className="bk-kvkk"><input type="checkbox" checked={kvkk} onChange={(e) => setKvkk(e.target.checked)} /> <span><button type="button" className="bk-link" onClick={(e) => { e.preventDefault(); setLegalDoc('privacy') }}>Aydınlatma Metni</button>'ni okudum. Randevum ile ilgili bilgilendirme mesajları bu numaraya gönderilir.</span></label>
-                <label className="bk-kvkk"><input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} /> <span>Kampanya ve fırsatlardan SMS / WhatsApp ile haberdar olmak istiyorum (<button type="button" className="bk-link" onClick={(e) => { e.preventDefault(); setLegalDoc('consent') }}>Açık Rıza Metni</button>). <i>İsteğe bağlı.</i></span></label>
+                <label className="bk-kvkk"><input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} /> <span>Kampanya ve fırsatlardan WhatsApp ile haberdar olmak istiyorum (<button type="button" className="bk-link" onClick={(e) => { e.preventDefault(); setLegalDoc('consent') }}>Açık Rıza Metni</button>). <i>İsteğe bağlı.</i></span></label>
                 <div className="bk-summary">
                   <div><CalendarCheck2 size={16} /> {formatDate(date, { weekday: true })} · {toHHMM(time ?? 0)}</div>
                   <div><Scissors size={16} /> {chosen.map((s) => s.name).join(', ')}</div>

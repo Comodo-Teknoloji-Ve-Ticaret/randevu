@@ -14,6 +14,9 @@ const FALLBACK: Record<MessageKind, string> = {
   winback: 'Seni özledik {musteri}! {salon}',
 }
 
+/** Kampanya/kutlama mesajları: açık rıza gerekir (İYS). Onay/hatırlatma/iptal hizmet mesajıdır. */
+const COMMERCIAL = new Set<MessageKind>(['birthday', 'winback'])
+
 export function messageService(repos: Repos, clock: Clock = istanbulClock) {
   const salon = () => (repos.tenantId ? repos.tenants.get(repos.tenantId)?.name : '') ?? ''
   const first = (n: string) => n.split(' ')[0]
@@ -38,14 +41,19 @@ export function messageService(repos: Repos, clock: Clock = istanbulClock) {
     return { customer, appt, body: renderTemplate(tpl, varsFor(customer, appt)) }
   }
 
-  /** SMS simüle edilir; WhatsApp için wa.me bağlantısı döner. */
-  function send(kind: MessageKind, target: { appointmentId?: ID; customerId?: ID }, channel: 'sms' | 'whatsapp'): MessageLog & { url?: string } {
+  /**
+   * Mesajlar yalnız WhatsApp ile gider: kayıt tutulur ve salonun telefonunda hazır mesajla açılacak wa.me bağlantısı döner.
+   * Sunucudaki MessageRules ile aynı izin kuralları: hizmet mesajı ileti izni, kampanya mesajı ayrıca açık rıza ister.
+   */
+  function send(kind: MessageKind, target: { appointmentId?: ID; customerId?: ID }): MessageLog & { url: string } {
     const { customer, appt, body } = preview(kind, target)
+    if (!customer.consentSms) throw new Error('Müşterinin ileti izni yok.')
+    if (COMMERCIAL.has(kind) && !customer.consentMarketing) throw new Error('Müşterinin kampanya mesajı için açık rızası yok.')
     const log = repos.messages.upsert({
-      customerId: customer.id, appointmentId: appt?.id, kind, channel, to: customer.phone, body,
-      status: channel === 'sms' ? 'simulated' : 'opened', at: new Date().toISOString(),
+      customerId: customer.id, appointmentId: appt?.id, kind, channel: 'whatsapp', to: customer.phone, body,
+      status: 'opened', at: new Date().toISOString(),
     })
-    return channel === 'whatsapp' ? { ...log, url: whatsappUrl(customer.phone, body) } : log
+    return { ...log, url: whatsappUrl(customer.phone, body) }
   }
 
   function dueReminders(): Appointment[] {
@@ -57,12 +65,10 @@ export function messageService(repos: Repos, clock: Clock = istanbulClock) {
       .sort((a, b) => a.start - b.start)
   }
 
-  const remindAll = () => dueReminders().map((a) => send('reminder', { appointmentId: a.id }, 'sms')).length
-
   function birthdaysToday(): Customer[] {
     const md = clock().date.slice(5)
-    return repos.customers.list().filter((c) => c.birthday === md)
+    return repos.customers.list().filter((c) => c.birthday === md && c.consentSms && c.consentMarketing)
   }
 
-  return { preview, send, dueReminders, remindAll, birthdaysToday }
+  return { preview, send, dueReminders, birthdaysToday }
 }

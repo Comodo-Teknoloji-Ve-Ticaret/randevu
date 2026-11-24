@@ -39,13 +39,6 @@ services:
       Smtp__User: ${SMTP_USER:-}
       Smtp__Password: ${SMTP_PASSWORD:-}
       Smtp__From: ${SMTP_FROM:-}
-      # SMS: simulation | netgsm | iletimerkezi (bkz. docs/deploy.md)
-      Sms__Provider: ${SMS_PROVIDER:-simulation}
-      Sms__Sender: ${SMS_SENDER:-}
-      Sms__Username: ${SMS_USERNAME:-}
-      Sms__Password: ${SMS_PASSWORD:-}
-      Sms__ApiKey: ${SMS_API_KEY:-}
-      Sms__ApiHash: ${SMS_API_HASH:-}
     ports:
       - "${API_PORT:-8080}:8080"
 

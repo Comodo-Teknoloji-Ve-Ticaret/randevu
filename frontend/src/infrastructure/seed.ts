@@ -457,11 +457,11 @@ export function buildSeed(today: string, nowMin = 690): DB {
     }
 
     // Mesaj kayıtları
-    for (const a of db.appointments.filter((x) => x.tenantId === T && x.date === addDays(today, 1) && x.customerId).slice(0, 8)) {
+    for (const a of db.appointments.filter((x) => x.tenantId === T && x.date === addDays(today, 1) && x.customerId && customers.find((c) => c.id === x.customerId)?.consentSms).slice(0, 8)) {
       const c = customers.find((x) => x.id === a.customerId)!
       db.messages.push({
-        id: id('ml_'), tenantId: T, customerId: c.id, appointmentId: a.id, kind: 'reminder', channel: 'sms', to: c.phone,
-        body: `Hatırlatma: ${c.name.split(' ')[0]}, yarın randevunuz var. — ${spec.name}`, status: 'simulated', at: iso(today, 600),
+        id: id('ml_'), tenantId: T, customerId: c.id, appointmentId: a.id, kind: 'reminder', channel: 'whatsapp', to: c.phone,
+        body: `Hatırlatma: ${c.name.split(' ')[0]}, yarın randevunuz var. — ${spec.name}`, status: 'opened', at: iso(today, 600),
       })
     }
 

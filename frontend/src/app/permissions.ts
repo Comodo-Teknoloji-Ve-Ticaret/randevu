@@ -26,7 +26,7 @@ export const PERM_GROUPS: { title: string; items: { perm: Perm; label: string; h
     { perm: 'calendar', label: 'Takvim', hint: 'Randevu verme, taşıma, durum değiştirme' },
     { perm: 'calendar.all', label: 'Tüm personelin takvimi', hint: 'Kapalıysa yalnız bağlı olduğu personelin takvimi' },
     { perm: 'customers', label: 'Müşteriler', hint: 'Müşteri kartı, notlar, boya kartı' },
-    { perm: 'messages', label: 'Mesajlar', hint: 'SMS / WhatsApp hatırlatma ve şablonlar' },
+    { perm: 'messages', label: 'Mesajlar', hint: 'WhatsApp hatırlatma ve şablonlar' },
   ] },
   { title: 'Kasa & satış', items: [
     { perm: 'cash', label: 'Kasa', hint: 'Adisyon, ödeme, veresiye, gider, gün sonu' },

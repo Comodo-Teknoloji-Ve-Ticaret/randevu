@@ -8,7 +8,7 @@ namespace ComodoRandevuHazir.Application;
 /// Ön yüzün değişikliklerini (eklenen/güncellenen/silinen kayıtlar) tek işlemde uygular.
 /// Her kayıt kiracıya bağlanır; rol yetkisi, korunan alanlar ve kiracı içi başvurular doğrulanır.
 /// </summary>
-public partial class BatchService(IRecordStore records, CashRules cash, StockPackageRules stock, MessageRules messages, ISmsSender sms)
+public partial class BatchService(IRecordStore records, CashRules cash, StockPackageRules stock, MessageRules messages)
 {
     public const int MaxOperations = 5000;
     private const string NoAccess = "Bu kayda erişim yetkiniz yok.";
@@ -75,24 +75,12 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
         await CheckReferencesAsync(Rows(), ct); // önce "bulunamadı" hataları: en anlaşılır mesaj
         await cash.CheckAsync(who, pending, pendingDeletes, ct); // gün sonu beklenen nakdi burada yazılır
         await stock.CheckAsync(pending, pendingDeletes, ct);
-        var outgoing = await messages.CheckAsync(pending, pendingDeletes, ct); // alıcı numarası burada müşteriden yazılır
+        await messages.CheckAsync(pending, pendingDeletes, ct); // izinler denetlenir, alıcı numarası müşteriden yazılır
         var rows = Rows();
 
         await CheckUniquePhonesAsync(rows, ct);
         await CheckUniqueSlugsAsync(rows, ct);
         await records.ApplyAsync(rows, dels, ct);
-        // Kayıt kesinleştikten sonra gönder: reddedilen bir batch SMS göndermez.
-        // Gerçek sağlayıcıda sonuç (iletildi / iletilemedi + neden) mesaj kaydına yazılır.
-        foreach (var m in outgoing)
-        {
-            var result = await sms.SendAsync(m, ct);
-            if (sms.LogStatus == "simulated" || rows.FirstOrDefault(r => r.Collection == "messages" && r.Id == m.MessageId) is not { } row) continue;
-            var data = JsonNode.Parse(row.Data)!.AsObject();
-            data["status"] = result.Ok ? "sent" : "failed";
-            if (result.ProviderRef is not null) data["providerRef"] = result.ProviderRef;
-            if (result.Error is not null) data["error"] = result.Error;
-            await records.UpsertManyAsync([row with { Data = data.ToJsonString() }], ct);
-        }
         return rows.Count + dels.Count;
     }
 

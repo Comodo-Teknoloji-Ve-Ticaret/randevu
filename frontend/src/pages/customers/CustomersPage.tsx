@@ -248,7 +248,7 @@ export function CustomerEditor({ customer, onClose, onSaved }: { customer?: Cust
         <Textarea value={f.notes} rows={4} onChange={(e) => setF({ ...f, notes: e.target.value })} />
       </Field>
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <div><div className="t-strong">Randevu bilgilendirme mesajları</div><div className="t-small muted">Onay, hatırlatma ve iptal SMS'leri (hizmet mesajı)</div></div>
+        <div><div className="t-strong">Randevu bilgilendirme mesajları</div><div className="t-small muted">Onay, hatırlatma ve iptal mesajları (WhatsApp, hizmet mesajı)</div></div>
         <Switch on={f.consentSms} onChange={(v) => setF({ ...f, consentSms: v })} label="İleti izni" />
       </div>
       <div className="row" style={{ justifyContent: 'space-between' }}>

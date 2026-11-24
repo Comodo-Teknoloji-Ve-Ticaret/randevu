@@ -43,12 +43,12 @@ public static class RecordRules
                     throw new ValidationException("Paket bilgileri geçersiz.");
                 break;
             case "messages":
-                if (Str(data, "kind") is not { } mk || !MessageKinds.Contains(mk) || Str(data, "channel") is not ("sms" or "whatsapp")
-                    || Str(data, "body") is not { Length: > 0 and <= MaxSmsLength })
+                if (Str(data, "kind") is not { } mk || !MessageKinds.Contains(mk) || Str(data, "channel") is not "whatsapp"
+                    || Str(data, "body") is not { Length: > 0 and <= MaxMessageLength })
                     throw new ValidationException("Mesaj geçersiz.");
                 break;
             case "templates":
-                if (Str(data, "kind") is not { } tk || !MessageKinds.Contains(tk) || Str(data, "body") is not { Length: > 0 and <= MaxSmsLength })
+                if (Str(data, "kind") is not { } tk || !MessageKinds.Contains(tk) || Str(data, "body") is not { Length: > 0 and <= MaxMessageLength })
                     throw new ValidationException("Şablon geçersiz.");
                 break;
             case "users":
@@ -68,8 +68,8 @@ public static class RecordRules
 
     public static readonly string[] MessageKinds = ["confirm", "reminder", "cancel", "birthday", "winback"];
 
-    /// <summary>6 parçalı Türkçe SMS sınırı.</summary>
-    public const int MaxSmsLength = 918;
+    /// <summary>Mesaj/şablon metni üst sınırı (karakter).</summary>
+    public const int MaxMessageLength = 918;
 
     public static string? Str(JsonObject o, string field) => o[field] is JsonValue v && v.TryGetValue<string>(out var s) ? s : null;
 

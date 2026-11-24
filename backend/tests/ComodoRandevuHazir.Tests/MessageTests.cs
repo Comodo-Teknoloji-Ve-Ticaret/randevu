@@ -1,19 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
-using ComodoRandevuHazir.Application;
-using ComodoRandevuHazir.Infrastructure.Messaging;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace ComodoRandevuHazir.Tests;
 
-/// <summary>Mesaj kayıtları ve SMS gönderimi (şimdilik simülasyon sağlayıcısı).</summary>
+/// <summary>
+/// Mesaj kayıtları. Mesajlar yalnız WhatsApp ile (salonun telefonundan, elle) gönderilir; sunucu kaydı tutar
+/// ve izinleri denetler: hizmet mesajı için ileti izni, kampanya mesajı için açık rıza.
+/// </summary>
 public class MessageTests(TestApp app) : IClassFixture<TestApp>
 {
-    private SimulatedSmsSender Sms => (SimulatedSmsSender)app.Services.GetRequiredService<ISmsSender>();
-
-    private static object Msg(string id, string customerId, string channel = "sms", string to = "5329999999", string body = "Hatırlatma: yarın 10:30", string kind = "reminder") =>
-        new { id, customerId, kind, channel, to, body, status = "simulated", at = "2026-11-24T09:00:00Z" };
+    private static object Msg(string id, string customerId, string channel = "whatsapp", string to = "5329999999", string body = "Hatırlatma: yarın 10:30", string kind = "reminder") =>
+        new { id, customerId, kind, channel, to, body, status = "opened", at = "2026-11-24T09:00:00Z" };
 
     private async Task<(HttpStatusCode Code, string Title)> Send(object[] upserts, object[]? deletes = null)
     {
@@ -38,25 +36,29 @@ public class MessageTests(TestApp app) : IClassFixture<TestApp>
     }
 
     [Fact]
-    public async Task Sms_goes_only_to_the_customers_own_number()
+    public async Task Whatsapp_log_uses_the_customers_own_number()
     {
         Expect(await Send([Up(Msg("ml_1", "m_a1"))]), HttpStatusCode.OK);
-        Assert.Equal("5321112233", (await Stored("ml_1"))["to"]!.GetValue<string>());
-        Assert.Contains(Sms.Sent, s => s.To == "5321112233" && s.Body == "Hatırlatma: yarın 10:30");
-        Assert.DoesNotContain(Sms.Sent, s => s.To == "5329999999");
+        var stored = await Stored("ml_1");
+        Assert.Equal("5321112233", stored["to"]!.GetValue<string>());
+        Assert.Equal("opened", stored["status"]!.GetValue<string>());
     }
 
     [Fact]
-    public async Task Sms_needs_customer_consent_but_manual_whatsapp_does_not()
+    public async Task Sms_channel_is_no_longer_accepted()
     {
-        Expect(await Send([Up(Msg("ml_2", "m_a2"))]), HttpStatusCode.BadRequest, "Müşterinin ileti izni yok");
-        Expect(await Send([Up(Msg("ml_3", "m_a2", channel: "whatsapp"))]), HttpStatusCode.OK);
-        Assert.Equal("opened", (await Stored("ml_3"))["status"]!.GetValue<string>());
-        Assert.DoesNotContain(Sms.Sent, s => s.To == "5321112244");
+        Expect(await Send([Up(Msg("ml_s1", "m_a1", channel: "sms"))]), HttpStatusCode.BadRequest, "Mesaj geçersiz");
     }
 
     [Fact]
-    public async Task Campaign_sms_needs_explicit_marketing_consent()
+    public async Task Service_message_needs_customer_consent()
+    {
+        // m_a2: ileti izni yok
+        Expect(await Send([Up(Msg("ml_2", "m_a2"))]), HttpStatusCode.BadRequest, "Müşterinin ileti izni yok");
+    }
+
+    [Fact]
+    public async Task Campaign_message_needs_explicit_marketing_consent()
     {
         // m_a1: ileti (hatırlatma) izni var, kampanya için açık rızası yok
         Expect(await Send([Up(Msg("ml_c1", "m_a1", kind: "birthday", body: "İyi ki doğdun!"))]), HttpStatusCode.BadRequest, "Müşterinin kampanya mesajı için açık rızası yok");
@@ -77,6 +79,7 @@ public class MessageTests(TestApp app) : IClassFixture<TestApp>
     {
         Expect(await Send([Up(Msg("ml_5", "m_a1", body: new string('a', 1000)))]), HttpStatusCode.BadRequest, "Mesaj geçersiz");
         Expect(await Send([Up(Msg("ml_6", "m_yok"))]), HttpStatusCode.BadRequest, "Müşteri bulunamadı");
+        Expect(await Send([Up(new { id = "ml_7", kind = "reminder", channel = "whatsapp", to = "5321112233", body = "Merhaba", status = "opened", at = "2026-11-24T09:00:00Z" })]), HttpStatusCode.BadRequest, "Mesaj için müşteri gerekli");
         Expect(await Send([Up(new { id = "tp_x", kind = "spam", name = "X", body = "Merhaba", enabled = true }, "templates")]), HttpStatusCode.BadRequest, "Şablon geçersiz");
         Expect(await Send([Up(new { id = "tp_ok", kind = "reminder", name = "Hatırlatma", body = "Merhaba {musteri}", enabled = true }, "templates")]), HttpStatusCode.OK);
     }

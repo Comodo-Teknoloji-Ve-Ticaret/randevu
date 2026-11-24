@@ -15,7 +15,7 @@ Comodo'nun kuaförlere sattığı çok kiracılı (çok salonlu) salon yönetim 
 | **Personel** | Tarih aralığına göre kim kaç TL yaptı; prim: kategori/hizmet bazlı % veya aylık kademeli (yalnızca aşan kısma), ürün primi markaya göre; haftalık mesai, izin/mola, yapabildiği hizmetler; personel rolü için "Primlerim" |
 | **Stok** | Kategori → marka filtresi, marka/kategori listeden seçilir veya elle eklenir, alış/satış KDV hariç + KDV oranı (kasada KDV dahil), satış / salon kullanımı ürünleri, giriş/kullanım/sayım, hareket geçmişi, kritik stok uyarısı, satışta otomatik düşüm |
 | **Paketler** | Bonuslu seans paketleri (ör. 8+2 fön = 10 kullanım), geçerlilik süresi, satılan paketler ve kalan seans takibi |
-| **Mesajlar** | Değişkenli şablonlar ve canlı önizleme, yarınki randevulara toplu hatırlatma, doğum günü kutlaması, WhatsApp ile gönderim, gönderim kaydı (SMS demo modunda simüle edilir) |
+| **Mesajlar** | Değişkenli şablonlar ve canlı önizleme, yarınki randevulara toplu hatırlatma, doğum günü kutlaması, WhatsApp ile gönderim, gönderim kaydı. Mesajlar yalnız WhatsApp ile gider (SMS yok) |
 | **Online randevu** | Salona özel link (`#/r/<salon>`): şube → hizmet → uzman ("fark etmez") → gün & saat → bilgiler → onay kodu + takvime ekle (.ics). Onay gerekliliği, ileri tarih ve minimum süre ayarlanır |
 | **Raporlar** | Ciro (önceki döneme göre), ortalama sepet, net, doluluk, yeni/dönen müşteri, gelmeme oranı, günlük ciro grafiği, ödeme yöntemleri, en çok kazandıran hizmetler, personel performansı ve prim, CSV |
 | **Ayarlar** | Salon bilgisi ve marka rengi, şubeler ve çalışma saatleri, kullanıcılar ve roller, online randevu, tema |
@@ -37,7 +37,7 @@ frontend/   React 19 + TypeScript + Vite
 backend/    .NET 10 Clean Architecture + PostgreSQL
   src/ComodoRandevuHazir.Domain/          Lisans, müsaitlik, para, telefon, rol tablosu (ön yüzle birebir)
   src/ComodoRandevuHazir.Application/     Giriş, senkron, işlemsel kayıt (yetki + kasa/stok/paket/mesaj kuralları), online randevu, davet
-  src/ComodoRandevuHazir.Infrastructure/  EF Core + Npgsql, şifre özeti, JWT, SMS sağlayıcı (şimdilik simülasyon)
+  src/ComodoRandevuHazir.Infrastructure/  EF Core + Npgsql, şifre özeti, JWT, e-posta (SMTP)
   src/ComodoRandevuHazir.WebApi/          Minimal API uç noktaları
   tests/                                   xUnit; gerçek PostgreSQL'e karşı (her test sınıfı kendi geçici veritabanı)
 docs/deploy.md         Sunucuya kurulum, taşıma, yedekleme

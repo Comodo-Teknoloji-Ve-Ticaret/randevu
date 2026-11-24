@@ -632,12 +632,21 @@ const suites = {
   async messages() {
     await fresh('u_t_lara_rec')
     await go('/mesajlar')
-    await step('Mesajlar: toplu SMS', async () => {
-      const disabled = await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Tümüne SMS gönder'))?.disabled)
-      if (disabled) { // yarın randevu yok ya da hepsine zaten gönderilmiş
-        const t = await text(); if (!t.includes('Yarın için hatırlatılacak randevu yok') && !t.includes('Hatırlatılacak randevu kalmadı')) throw new Error('boş durum mesajı yok'); return
-      }
-      await clickText('Tümüne SMS gönder', 'button'); await sleep(300); await expectText('hatırlatma SMS')
+    await step('Mesajlar: SMS seçeneği yok, yalnız WhatsApp', async () => {
+      const t = await text()
+      if (/\bSMS\b/.test(t)) throw new Error('ekranda hâlâ SMS geçiyor')
+      await expectText('WhatsApp ile gider')
+    })
+    await step('Mesajlar: doğum günü listesinde yalnız kampanya izni olanlar', async () => {
+      await editDb(`
+        const md = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' }).slice(5)
+        const cs = d.customers.filter((c) => c.tenantId === 't_lara')
+        cs.forEach((c) => { if (c.birthday === md) c.birthday = '01-01' })
+        Object.assign(cs[0], { name: 'İzinli Doğumgünü', birthday: md, consentSms: true, consentMarketing: true })
+        Object.assign(cs[1], { name: 'İzinsiz Doğumgünü', birthday: md, consentSms: true, consentMarketing: false })
+      `)
+      await go('/mesajlar')
+      await expectText('İzinli Doğumgünü'); await noText('İzinsiz Doğumgünü')
     })
     await step('Mesajlar: tümüne WhatsApp (tek tek)', async () => {
       // yarın kapalı olabilir: 3 gelecek randevuyu yarına taşı, izinleri aç
