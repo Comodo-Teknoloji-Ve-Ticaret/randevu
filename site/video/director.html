@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<title>Tanıtım videosu — sahne</title>
+<style>
+  @font-face { font-family: 'Jakarta'; font-weight: 400 800; src: url(../assets/fonts/jakarta-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+20A0-20C4; }
+  @font-face { font-family: 'Jakarta'; font-weight: 400 800; src: url(../assets/fonts/jakarta-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+2000-206F; }
+  html, body { margin: 0; background: #111; }
+  canvas { display: block; width: 100vw; height: auto; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script type="module">
+import { encodeMp4 } from './mp4.js'
+/*
+ * Tanıtım videosunun sahneleri. Her kare yalnız zamana (t, saniye) bağlıdır: drawAt(t) aynı t için hep aynı kareyi çizer.
+ * render.mjs bu sayfayı açar, record() ile kaydeder. Ad/fiyat/alan adı URL parametresinden gelir (site.config.json).
+ */
+const q = new URLSearchParams(location.search)
+const NAME = q.get('name') || 'RandevuHazır'
+const PRICE = q.get('price') || '2.000'
+const DOMAIN = q.get('domain') || 'randevuhazir.com.tr'
+
+const W = 1920, H = 1080
+const c = document.getElementById('c')
+const g = c.getContext('2d')
+const F = (w, s) => `${w} ${s}px Jakarta, system-ui, sans-serif`
+const C = { text: '#1d1d24', muted: '#6b6b7b', accent: '#6c5ce7', accent2: '#a855f7', soft: '#efedff', wa: '#1fae5b', dark: '#17171c' }
+
+const load = (src) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error(src)); i.src = src })
+const IMG = {}
+async function loadAll() {
+  const list = {
+    icon: '../assets/favicon.svg',
+    b1: 'frames/b1-hizmet.png', b2: 'frames/b2-saat.png', b3: 'frames/b4-form.png', b4: 'frames/b5-tamam.png',
+    cal: '../assets/shots/takvim.webp', msg: '../assets/shots/mesajlar.webp', cash: '../assets/shots/kasa.webp', rep: '../assets/shots/raporlar.webp',
+  }
+  await Promise.all(Object.entries(list).map(async ([k, v]) => { IMG[k] = await load(v) }))
+  await Promise.all([document.fonts.load(F(800, 80)), document.fonts.load(F(600, 30)), document.fonts.load(F(500, 30))])
+}
+
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x))
+const ease = (x) => { x = clamp(x); return 1 - Math.pow(1 - x, 3) }
+const easeIO = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2 }
+
+function rr(x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r) }
+function text(s, x, y, { font, color = C.text, align = 'left', base = 'alphabetic' }) { g.font = font; g.fillStyle = color; g.textAlign = align; g.textBaseline = base; g.fillText(s, x, y) }
+function wrap(s, maxW, font) {
+  g.font = font
+  const words = s.split(' '); const lines = []; let cur = ''
+  for (const w of words) { const n = cur ? cur + ' ' + w : w; if (g.measureText(n).width > maxW && cur) { lines.push(cur); cur = w } else cur = n }
+  if (cur) lines.push(cur)
+  return lines
+}
+function shadow(blur, oy, col) { g.shadowColor = col; g.shadowBlur = blur; g.shadowOffsetY = oy; g.shadowOffsetX = 0 }
+function noShadow() { g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0 }
+
+function background(t) {
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H)
+  const a = g.createRadialGradient(1500 + Math.sin(t * 0.3) * 60, -80, 40, 1500, -80, 1000)
+  a.addColorStop(0, 'rgba(196,184,255,0.55)'); a.addColorStop(1, 'rgba(196,184,255,0)')
+  g.fillStyle = a; g.fillRect(0, 0, W, H)
+  const b = g.createRadialGradient(150, 900 + Math.cos(t * 0.25) * 40, 30, 150, 900, 800)
+  b.addColorStop(0, 'rgba(232,224,255,0.8)'); b.addColorStop(1, 'rgba(232,224,255,0)')
+  g.fillStyle = b; g.fillRect(0, 0, W, H)
+}
+
+function icon(x, y, size) { g.drawImage(IMG.icon, x, y, size, size) }
+
+function pill(label, x, y, { bg = C.soft, color = C.accent, font = F(700, 26), padX = 22, h = 52 } = {}) {
+  g.font = font; const w = g.measureText(label).width + padX * 2
+  rr(x, y, w, h, h / 2); g.fillStyle = bg; g.fill()
+  text(label, x + padX, y + h / 2 + 1, { font, color, base: 'middle' })
+  return w
+}
+
+/* Telefon çerçevesi içinde görüntü (sola kayarak geçiş) */
+function phone(x, y, w, imgs, t, per, slide = 0.4) {
+  const h = w * (844 / 390)
+  const bz = 14
+  shadow(70, 30, 'rgba(40,30,110,0.35)')
+  rr(x - bz, y - bz, w + bz * 2, h + bz * 2, 58); g.fillStyle = C.dark; g.fill()
+  noShadow()
+  g.save(); rr(x, y, w, h, 44); g.clip()
+  const idx = Math.min(imgs.length - 1, Math.floor(t / per))
+  const local = t - idx * per
+  const p = idx < imgs.length - 1 ? easeIO((local - (per - slide)) / slide) : 0
+  g.drawImage(imgs[idx], x - p * w, y, w, h)
+  if (p > 0) g.drawImage(imgs[idx + 1], x + (1 - p) * w, y, w, h)
+  g.restore()
+  return { idx, p }
+}
+
+/* Tarayıcı çerçevesi + yavaş yakınlaşma (Ken Burns) */
+function browser(img, x, y, w, t, dur, focus = [0.5, 0.4], zoom = 0.07) {
+  const bar = 40
+  const h = w * (img.height / img.width)
+  shadow(80, 34, 'rgba(40,30,110,0.32)')
+  rr(x, y, w, h + bar, 22); g.fillStyle = '#fff'; g.fill()
+  noShadow()
+  g.save(); rr(x, y, w, h + bar, 22); g.clip()
+  g.fillStyle = '#f3f3f7'; g.fillRect(x, y, w, bar)
+  for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(x + 24 + i * 22, y + bar / 2, 6.5, 0, Math.PI * 2); g.fillStyle = '#dcdce6'; g.fill() }
+  g.fillStyle = '#e8e8ef'; g.fillRect(x, y + bar - 1, w, 1)
+  g.beginPath(); g.rect(x, y + bar, w, h); g.clip()
+  const s = 1 + zoom * easeIO(t / dur)
+  const fx = x + focus[0] * w, fy = y + bar + focus[1] * h
+  g.translate(fx, fy); g.scale(s, s); g.translate(-fx, -fy)
+  g.drawImage(img, x, y + bar, w, h)
+  g.restore()
+}
+
+/* ——— Sahneler ——— */
+function sIntro(t, d) {
+  const a = ease(t / 0.9)
+  const cx = W / 2
+  g.save(); g.globalAlpha = a
+  const s = 150 * (0.85 + 0.15 * ease(t / 0.8))
+  shadow(50, 20, 'rgba(108,92,231,0.45)'); icon(cx - s / 2, 300 - s / 2 + 40, s); noShadow()
+  g.restore()
+  g.save(); g.globalAlpha = ease((t - 0.35) / 0.7)
+  text(NAME, cx, 560 + (1 - ease((t - 0.35) / 0.7)) * 24, { font: F(800, 120), align: 'center' })
+  g.restore()
+  g.save(); g.globalAlpha = ease((t - 0.9) / 0.7)
+  text('Salonunuzun randevusu, kasası ve müşterisi', cx, 670, { font: F(500, 46), color: C.muted, align: 'center' })
+  const grad = g.createLinearGradient(cx - 200, 0, cx + 200, 0); grad.addColorStop(0, C.accent); grad.addColorStop(1, C.accent2)
+  text('tek ekranda.', cx, 740, { font: F(800, 56), color: grad, align: 'center' })
+  g.restore()
+  g.save(); g.globalAlpha = ease((t - 1.5) / 0.7)
+  g.font = F(600, 26); const labels = ['Kuaför', 'Berber', 'Güzellik', 'Tırnak', 'Spa']
+  const widths = labels.map((l) => g.measureText(l).width + 44); const total = widths.reduce((a, b) => a + b, 0) + 14 * (labels.length - 1)
+  let x = cx - total / 2
+  labels.forEach((l, i) => { pill(l, x, 830, { font: F(600, 26), h: 50 }); x += widths[i] + 14 })
+  g.restore()
+}
+
+const BOOK_STEPS = ['Hizmeti seçer', 'Uzmanı ve boş saati seçer', 'Adını ve telefonunu yazar', 'Talep anında salona düşer']
+function sBook(t, d) {
+  const enter = ease(t / 0.7)
+  g.save(); g.globalAlpha = enter
+  const lx = 200
+  pill('1 · Online randevu', lx, 210)
+  const lines = wrap('Müşteriniz randevusunu linkten kendisi alır', 820, F(800, 74))
+  lines.forEach((l, i) => text(l, lx, 360 + i * 88, { font: F(800, 74) }))
+  const top = 360 + lines.length * 88 + 40
+  const per = (d - 0.3) / 4
+  const idx = Math.min(3, Math.floor((t - 0.15) / per))
+  BOOK_STEPS.forEach((s, i) => {
+    const y = top + i * 84
+    const on = i === idx, done = i < idx
+    g.beginPath(); g.arc(lx + 26, y, 26, 0, Math.PI * 2); g.fillStyle = on ? C.accent : done ? '#c9c2f7' : '#ececf2'; g.fill()
+    text(String(i + 1), lx + 26, y + 1, { font: F(800, 24), color: on || done ? '#fff' : C.muted, align: 'center', base: 'middle' })
+    text(s, lx + 76, y + 1, { font: F(on ? 700 : 500, 34), color: on ? C.text : C.muted, base: 'middle' })
+  })
+  g.restore()
+  const pw = 372, ph = pw * (844 / 390)
+  const px = 1270, py = (H - ph) / 2 + (1 - enter) * 60
+  g.save(); g.globalAlpha = enter
+  phone(px, py, pw, [IMG.b1, IMG.b2, IMG.b3, IMG.b4], Math.max(0, t - 0.15), per)
+  g.restore()
+}
+
+function sDesk(key, label, title, focus, zoom) {
+  return (t, d) => {
+    const img = IMG[key]
+    const enter = ease(t / 0.7)
+    g.save(); g.globalAlpha = enter
+    g.font = F(700, 26); const pw = g.measureText(label).width + 44
+    pill(label, W / 2 - pw / 2, 62)
+    text(title, W / 2, 182, { font: F(800, 62), align: 'center' })
+    g.restore()
+    const bw = 1250
+    g.save(); g.globalAlpha = enter
+    browser(img, (W - bw) / 2, 226 + (1 - enter) * 50, bw, t, d, focus, zoom)
+    g.restore()
+  }
+}
+
+function sOutro(t, d) {
+  const cx = W / 2
+  g.save(); g.globalAlpha = ease(t / 0.7)
+  shadow(40, 16, 'rgba(108,92,231,0.4)'); icon(cx - 60, 230, 120); noShadow()
+  text(NAME, cx, 470, { font: F(800, 104), align: 'center' })
+  g.restore()
+  g.save(); g.globalAlpha = ease((t - 0.4) / 0.7)
+  text(`Aylık ₺${PRICE} · Tüm özellikler dahil`, cx, 570, { font: F(600, 46), color: C.muted, align: 'center' })
+  g.restore()
+  g.save(); g.globalAlpha = ease((t - 0.8) / 0.7)
+  const label = "WhatsApp'tan yazın"; g.font = F(800, 42); const w = g.measureText(label).width + 140
+  const pulse = 1 + 0.025 * Math.sin(t * 4)
+  g.translate(cx, 700); g.scale(pulse, pulse)
+  shadow(40, 14, 'rgba(31,174,91,0.55)'); rr(-w / 2, -48, w, 96, 48); g.fillStyle = C.wa; g.fill(); noShadow()
+  waGlyph(-w / 2 + 44, -20, 40)
+  text(label, -w / 2 + 104, 2, { font: F(800, 42), color: '#fff', base: 'middle' })
+  g.restore()
+  g.save(); g.globalAlpha = ease((t - 1.2) / 0.7)
+  text(DOMAIN, cx, 860, { font: F(600, 34), color: C.accent, align: 'center' })
+  g.restore()
+}
+
+const WA = new Path2D('M12.04 2a9.9 9.9 0 0 0-8.5 14.98L2 22l5.17-1.5A9.92 9.92 0 1 0 12.04 2Zm0 18.13a8.2 8.2 0 0 1-4.2-1.15l-.3-.18-3.07.89.9-3-.2-.31a8.22 8.22 0 1 1 6.87 3.75Zm4.5-6.15c-.25-.12-1.46-.72-1.69-.8-.23-.08-.39-.12-.55.12-.17.25-.64.8-.78.97-.14.16-.29.18-.53.06a6.74 6.74 0 0 1-3.37-2.94c-.25-.44.25-.41.72-1.36.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47a.9.9 0 0 0-.65.3 2.74 2.74 0 0 0-.86 2.04 4.77 4.77 0 0 0 1 2.53 10.9 10.9 0 0 0 4.18 3.69c1.55.67 2.16.73 2.93.61.47-.07 1.46-.6 1.66-1.17.21-.58.21-1.07.15-1.17-.06-.1-.22-.17-.47-.29Z')
+function waGlyph(x, y, s) { g.save(); g.translate(x, y); g.scale(s / 24, s / 24); g.fillStyle = '#fff'; g.fill(WA); g.restore() }
+
+const SCENES = [
+  { d: 3.6, f: sIntro },
+  { d: 9.0, f: sBook },
+  { d: 4.4, f: sDesk('cal', '2 · Takvim', 'Randevu anında takviminize düşer', [0.55, 0.45], 0.08) },
+  { d: 4.0, f: sDesk('msg', '3 · Hatırlatma', 'Yarınki randevulara tek tıkla hatırlatma', [0.5, 0.35], 0.07) },
+  { d: 4.0, f: sDesk('cash', '4 · Kasa', 'Adisyon, ödeme ve gün sonu tek ekranda', [0.3, 0.45], 0.07) },
+  { d: 4.0, f: sDesk('rep', '5 · Raporlar', 'Ciro, doluluk ve primler hazır', [0.5, 0.5], 0.07) },
+  { d: 4.6, f: sOutro },
+]
+const FADE = 0.35
+const TOTAL = SCENES.reduce((a, s) => a + s.d, 0)
+
+function drawAt(t) {
+  background(t)
+  let start = 0
+  for (let k = 0; k < SCENES.length; k++) {
+    const s = SCENES[k]
+    if (t < start + s.d || k === SCENES.length - 1) {
+      const local = Math.min(t - start, s.d)
+      const fadeIn = k === 0 ? 1 : clamp(local / FADE)
+      const fadeOut = k === SCENES.length - 1 ? clamp((s.d - local) / FADE) : clamp((s.d - local) / FADE)
+      g.save(); g.globalAlpha = Math.min(fadeIn, fadeOut)
+      s.f(local, s.d)
+      g.restore()
+      return
+    }
+    start += s.d
+  }
+}
+
+/** Kare kare kodlar (gerçek zamanlı değil, her kare tam yerinde); MP4'ü base64 döner. */
+async function record({ fps = 30, bitrate = 1_600_000 } = {}) {
+  const { bytes, codec, frames } = await encodeMp4({ canvas: c, draw: drawAt, seconds: TOTAL, fps, bitrate })
+  let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return { mimeType: `video/mp4;codecs=${codec}`, base64: btoa(bin), seconds: TOTAL, frames }
+}
+
+await loadAll()
+drawAt(Number(q.get('t') || 0))
+Object.assign(window, { drawAt, record, TOTAL, ready: true })
+</script>
+</body>
+</html>

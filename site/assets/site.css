@@ -96,6 +96,11 @@ p { margin: 0; }
 .sec-head h2, .split-copy h2 { font-size: clamp(28px, 4.2vw, 42px); font-weight: 800; }
 .sub { margin-top: 14px; color: var(--muted); font-size: 17.5px; }
 
+/* Video */
+.sec-video { padding-bottom: 64px; }
+.frame-video { max-width: 1040px; margin: 0 auto; background: #f6f5ff; }
+.frame-video video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #f6f5ff; }
+
 /* Sorun → çözüm */
 .band { background: #1d1b2e; color: #fff; padding: 40px 0; }
 .pains { display: grid; gap: 26px; }

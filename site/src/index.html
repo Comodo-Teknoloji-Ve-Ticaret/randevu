@@ -46,6 +46,7 @@
         <span>{{name}}</span>
       </a>
       <nav class="nav" aria-label="Sayfa bölümleri">
+        <a href="#video">Video</a>
         <a href="#ozellikler">Özellikler</a>
         <a href="#online-randevu">Online randevu</a>
         <a href="#fiyat">Fiyat</a>
@@ -62,7 +63,7 @@
         <div class="hero-copy">
           <p class="eyebrow">Kuaför · Berber · Güzellik · Tırnak · Spa</p>
           <h1>Salonunuzun randevusu, kasası ve müşterisi <span class="hl">tek ekranda.</span></h1>
-          <p class="lead">Müşterileriniz linkten ya da QR koddan kendi randevusunu alsın, hatırlatma mesajı kendiliğinden gitsin. Siz de günün sonunda kasayı, primleri ve stoku tek yerden görün.</p>
+          <p class="lead">Müşterileriniz linkten ya da QR koddan kendi randevusunu alsın, hatırlatma mesajlarını tek tıkla gönderin. Günün sonunda kasayı, primleri ve stoku tek yerden görün.</p>
           <div class="hero-cta">
             <a class="btn btn-wa btn-lg" href="{{wa}}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg>WhatsApp'tan yazın</a>
             <a class="btn btn-ghost btn-lg" href="#ozellikler">Neler yapabilir? <svg class="ic"><use href="#i-arrow"/></svg></a>
@@ -94,12 +95,28 @@
         </div>
         <div class="pain">
           <p class="pain-q">“Randevuyu unutup gelmiyorlar.”</p>
-          <p class="pain-a">Randevudan önce SMS ya da WhatsApp hatırlatması gider, boş koltuk azalır.</p>
+          <p class="pain-a">Yarınki tüm randevulara tek tıkla SMS ya da WhatsApp hatırlatması gönderin, boş koltuk azalsın.</p>
         </div>
         <div class="pain">
           <p class="pain-q">“Ay sonu kim ne kadar prim alacak, hesap tutmuyor.”</p>
           <p class="pain-a">Her adisyon personele işlenir; prim, ciro ve gider kendiliğinden hesaplanır.</p>
         </div>
+      </div>
+    </section>
+
+    <!-- VİDEO -->
+    <section class="sec sec-video" id="video">
+      <div class="wrap">
+        <div class="sec-head">
+          <p class="eyebrow">30 saniyede</p>
+          <h2>{{name}} nasıl çalışır?</h2>
+          <p class="sub">Müşterinin randevu almasından gün sonu raporuna kadar.</p>
+        </div>
+        <figure class="frame frame-video">
+          <video id="promo" controls muted loop playsinline preload="none" width="1920" height="1080" poster="assets/video/tanitim-poster.webp" aria-label="{{name}} tanıtım videosu (sessiz)">
+            <source src="assets/video/tanitim.mp4" type="video/mp4" />
+          </video>
+        </figure>
       </div>
     </section>
 
@@ -114,7 +131,7 @@
         <div class="grid">
           <article class="card"><span class="ib"><svg class="ic"><use href="#i-cal"/></svg></span><h3>Randevu takvimi</h3><p>Her personel kendi sütununda. Randevu verin, taşıyın, randevusuz gelen müşteriyi tek tıkla ekleyin; molalar ve çalışma saatleri hazır.</p></article>
           <article class="card"><span class="ib"><svg class="ic"><use href="#i-link"/></svg></span><h3>Online randevu sayfası</h3><p>Salonunuza özel kısa link ve QR kod. Müşteri şube, hizmet, personel ve saati seçer; randevu takviminize düşer.</p></article>
-          <article class="card"><span class="ib"><svg class="ic"><use href="#i-msg"/></svg></span><h3>SMS &amp; WhatsApp hatırlatma</h3><p>Randevu hatırlatma, doğum günü kutlaması ve “sizi özledik” mesajları. Kampanya mesajı yalnızca izin veren müşteriye gider.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-msg"/></svg></span><h3>SMS &amp; WhatsApp hatırlatma</h3><p>Yarınki randevulara tek tıkla hatırlatma; doğum günü ve “sizi özledik” mesajları. Kampanya mesajı yalnızca izin veren müşteriye gider.</p></article>
           <article class="card"><span class="ib"><svg class="ic"><use href="#i-users"/></svg></span><h3>Müşteri kartı</h3><p>Geçmiş randevular, notlar, boya formülü ve harcamalar tek kartta. Müşteri geldiğinde ne yapıldığını hatırlamak zorunda kalmazsınız.</p></article>
           <article class="card"><span class="ib"><svg class="ic"><use href="#i-wallet"/></svg></span><h3>Kasa &amp; adisyon</h3><p>Nakit, kart, havale ve veresiye. Giderleri girin, gün sonunu alın; kasada ne olması gerektiği hep belli.</p></article>
           <article class="card"><span class="ib"><svg class="ic"><use href="#i-coins"/></svg></span><h3>Personel primleri</h3><p>Hizmet ve ürün satışından prim kendiliğinden hesaplanır. Personel isterse yalnızca kendi primini görür.</p></article>
@@ -138,7 +155,7 @@
           <ol class="steps">
             <li><b>Linkinizi paylaşın.</b> <code>{{domain}}/salonunuz</code> gibi kısa bir adres. Instagram profilinize, Google İşletme sayfanıza ya da WhatsApp durumunuza koyun.</li>
             <li><b>QR kodu asın.</b> Hazır A4 afişi yazdırın; tezgâha, aynaya, vitrine koyun. Müşteri kamerayla okutup randevu alır.</li>
-            <li><b>Randevu takviminize düşer.</b> İsterseniz önce siz onaylarsınız; müşteriye onay ve hatırlatma mesajı gider.</li>
+            <li><b>Randevu takviminize düşer.</b> İsterseniz önce siz onaylarsınız; onay bekleyen randevular takvimde ayrıca listelenir.</li>
           </ol>
         </div>
         <div class="split-visual phones">
@@ -285,6 +302,20 @@
           img.src = t.dataset.src; img.alt = t.dataset.alt; cap.textContent = t.dataset.cap;
         });
       });
+    })();
+    // Tanıtım videosu: görününce sessiz oynat, çıkınca durdur (hareket azaltma tercihine saygı)
+    (function () {
+      var v = document.getElementById('promo');
+      if (!v || !('IntersectionObserver' in window)) return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var userPaused = false;
+      v.addEventListener('pause', function () { if (!v.dataset.auto) userPaused = true; delete v.dataset.auto; });
+      new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting && !userPaused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+          else if (!e.isIntersecting && !v.paused) { v.dataset.auto = '1'; v.pause(); }
+        });
+      }, { threshold: 0.5 }).observe(v);
     })();
   </script>
 </body>
