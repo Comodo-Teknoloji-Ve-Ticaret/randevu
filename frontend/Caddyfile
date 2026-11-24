@@ -1,4 +1,4 @@
-# DOMAIN ortam değişkeni: alan adı, Türkçe karakter varsa xn-- biçiminde (ör. xn--randevunhazr-c5b.com.tr) → Let's Encrypt ile otomatik HTTPS.
+# DOMAIN ortam değişkeni: alan adı, Türkçe karakter varsa xn-- biçiminde (ör. xn--randevunhazr-c5b.com) → Let's Encrypt ile otomatik HTTPS.
 {$DOMAIN} {
 	encode zstd gzip
 	handle /api/* {

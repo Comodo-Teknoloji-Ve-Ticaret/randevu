@@ -15,6 +15,7 @@
   <meta property="og:image" content="https://{{domainUrl}}/assets/shots/takvim.webp" />
   <link rel="preload" href="assets/fonts/jakarta-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="assets/site.css" />
+  <script>/* eski uygulama linkleri (#/giris, #/r/salon…) panele */ if (/^#\/./.test(location.hash)) location.replace("panel/" + location.hash)</script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -52,6 +53,7 @@
         <a href="#fiyat">Fiyat</a>
         <a href="#sss">Sorular</a>
       </nav>
+      <a class="btn btn-ghost btn-sm top-login" href="panel/#/giris">Giriş</a>
       <a class="btn btn-wa btn-sm" href="{{wa}}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg><span>WhatsApp</span></a>
     </div>
   </header>
@@ -284,7 +286,7 @@
   <footer class="foot">
     <div class="wrap foot-in">
       <div class="brand"><img src="assets/favicon.svg" alt="" width="28" height="28" /><span>{{name}}</span></div>
-      <p class="muted">{{contactLine}}</p>
+      <p class="muted"><a href="panel/#/giris">Salon girişi</a> · {{contactLine}}</p>
       <p class="muted">© {{year}} {{company}}</p>
     </div>
   </footer>

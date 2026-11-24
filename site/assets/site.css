@@ -56,8 +56,10 @@ p { margin: 0; }
 .nav { display: none; gap: 26px; margin-left: auto; }
 .nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 15px; }
 .nav a:hover { color: var(--text); }
-.top .btn { margin-left: auto; }
-@media (min-width: 860px) { .nav { display: flex; } .top .btn { margin-left: 0; } }
+.top .btn-wa { margin-left: 10px; }
+.top .top-login { margin-left: auto; }
+@media (min-width: 860px) { .nav { display: flex; } .top .top-login { margin-left: 0; } }
+@media (max-width: 380px) { .top .btn-wa span { display: none; } }
 
 /* Giriş */
 .hero { position: relative; overflow: hidden; padding: 48px 0 56px; background:
