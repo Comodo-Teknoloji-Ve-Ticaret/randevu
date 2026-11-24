@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{name}} · Salonlar için randevu, kasa ve müşteri yönetimi</title>
+  <meta name="description" content="{{name}}: kuaför, berber ve güzellik salonları için online randevu, SMS hatırlatma, kasa, prim, stok ve raporlar tek ekranda. Aylık ₺{{priceMonthly}}, tüm özellikler dahil." />
+  <meta name="theme-color" content="#6c5ce7" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="canonical" href="https://{{domain}}/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="tr_TR" />
+  <meta property="og:title" content="{{name}} · Salonunuz tek ekranda" />
+  <meta property="og:description" content="Online randevu, hatırlatma, kasa, prim, stok ve raporlar. Aylık ₺{{priceMonthly}}, tüm özellikler dahil." />
+  <meta property="og:image" content="https://{{domain}}/assets/shots/takvim.webp" />
+  <link rel="preload" href="assets/fonts/jakarta-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/site.css" />
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 10h18M8 2.5v4M16 2.5v4M8.5 15.5l2.2 2.2 4.6-4.6"/></symbol>
+      <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></symbol>
+      <symbol id="i-msg" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12Z"/><path d="M8.5 11h7M8.5 14h4"/></symbol>
+      <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="14" rx="3"/><path d="M3 9.5h18M16 14.5h1.5"/></symbol>
+      <symbol id="i-coins" viewBox="0 0 24 24"><circle cx="9" cy="9" r="5.5"/><path d="M15.5 4.8A5.5 5.5 0 0 1 15 15.4M13 19.5a5.5 5.5 0 0 0 7.6-7.4"/><path d="M9 6.5v5M7 8.5h4"/></symbol>
+      <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 2.8 20.5 7v10L12 21.2 3.5 17V7Z"/><path d="M3.5 7 12 11.2 20.5 7M12 11.2v10"/></symbol>
+      <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3.5" y="8" width="17" height="4.5" rx="1"/><path d="M5 12.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7.5M12 8v13M12 8S10.5 3 7.8 3.6C5.5 4.1 6.4 8 12 8Zm0 0s1.5-5 4.2-4.4C18.5 4.1 17.6 8 12 8Z"/></symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3.5 3.5v17h17"/><path d="M8 16v-4M12 16V8M16 16v-6.5"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2.8 19.5 6v5.5c0 4.6-3.2 8.3-7.5 9.7-4.3-1.4-7.5-5.1-7.5-9.7V6Z"/><path d="m8.8 12 2.2 2.2 4.3-4.4"/></symbol>
+      <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 9.5V20h16V9.5M3 9.5 5 4h14l2 5.5a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0Z"/><path d="M10 20v-5h4v5"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.8"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.4a3.8 3.8 0 0 1 0 7.2M18.5 14.3a6.5 6.5 0 0 1 3 5.7"/></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3"/></symbol>
+      <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h2.5v2.5H14zM18 18h2.5v2.5H18zM14 20.5h1.5M20.5 14v1.5"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12.04 2a9.9 9.9 0 0 0-8.5 14.98L2 22l5.17-1.5A9.92 9.92 0 1 0 12.04 2Zm0 18.13a8.2 8.2 0 0 1-4.2-1.15l-.3-.18-3.07.89.9-3-.2-.31a8.22 8.22 0 1 1 6.87 3.75Zm4.5-6.15c-.25-.12-1.46-.72-1.69-.8-.23-.08-.39-.12-.55.12-.17.25-.64.8-.78.97-.14.16-.29.18-.53.06a6.74 6.74 0 0 1-3.37-2.94c-.25-.44.25-.41.72-1.36.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47a.9.9 0 0 0-.65.3 2.74 2.74 0 0 0-.86 2.04 4.77 4.77 0 0 0 1 2.53 10.9 10.9 0 0 0 4.18 3.69c1.55.67 2.16.73 2.93.61.47-.07 1.46-.6 1.66-1.17.21-.58.21-1.07.15-1.17-.06-.1-.22-.17-.47-.29Z"/></symbol>
+    </defs>
+  </svg>
+
+  <header class="top" id="top">
+    <div class="wrap top-in">
+      <a class="brand" href="#top" aria-label="{{name}} ana sayfa">
+        <img src="assets/favicon.svg" alt="" width="34" height="34" />
+        <span>{{name}}</span>
+      </a>
+      <nav class="nav" aria-label="Sayfa bölümleri">
+        <a href="#ozellikler">Özellikler</a>
+        <a href="#online-randevu">Online randevu</a>
+        <a href="#fiyat">Fiyat</a>
+        <a href="#sss">Sorular</a>
+      </nav>
+      <a class="btn btn-wa btn-sm" href="{{wa}}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg><span>WhatsApp</span></a>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="wrap hero-in">
+        <div class="hero-copy">
+          <p class="eyebrow">Kuaför · Berber · Güzellik · Tırnak · Spa</p>
+          <h1>Salonunuzun randevusu, kasası ve müşterisi <span class="hl">tek ekranda.</span></h1>
+          <p class="lead">Müşterileriniz linkten ya da QR koddan kendi randevusunu alsın, hatırlatma mesajı kendiliğinden gitsin. Siz de günün sonunda kasayı, primleri ve stoku tek yerden görün.</p>
+          <div class="hero-cta">
+            <a class="btn btn-wa btn-lg" href="{{wa}}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg>WhatsApp'tan yazın</a>
+            <a class="btn btn-ghost btn-lg" href="#ozellikler">Neler yapabilir? <svg class="ic"><use href="#i-arrow"/></svg></a>
+          </div>
+          <ul class="hero-points">
+            <li><svg class="ic"><use href="#i-check"/></svg>Kurulum yok, tarayıcıdan açılır</li>
+            <li><svg class="ic"><use href="#i-check"/></svg>Bilgisayar, tablet ve telefonda</li>
+            <li><svg class="ic"><use href="#i-check"/></svg>Aylık ₺{{priceMonthly}}, her şey dahil</li>
+          </ul>
+        </div>
+        <div class="hero-visual">
+          <figure class="frame frame-desk">
+            <div class="frame-bar"><i></i><i></i><i></i></div>
+            <img src="assets/shots/takvim.webp" width="1440" height="900" alt="Personel sütunlarıyla günlük randevu takvimi; üstte günün randevu sayısı, beklenen ciro ve doluluk" />
+          </figure>
+          <figure class="frame frame-phone">
+            <img src="assets/shots/randevu-mobil-2.webp" width="390" height="844" alt="Müşterinin telefonda gördüğü online randevu sayfası: hizmet seçimi" />
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- SORUN → ÇÖZÜM -->
+    <section class="band">
+      <div class="wrap pains">
+        <div class="pain">
+          <p class="pain-q">“Telefon gün boyu çalıyor, makasın elinde.”</p>
+          <p class="pain-a">Müşteri boş saatleri görür, randevusunu kendisi alır. Siz yalnızca onaylarsınız.</p>
+        </div>
+        <div class="pain">
+          <p class="pain-q">“Randevuyu unutup gelmiyorlar.”</p>
+          <p class="pain-a">Randevudan önce SMS ya da WhatsApp hatırlatması gider, boş koltuk azalır.</p>
+        </div>
+        <div class="pain">
+          <p class="pain-q">“Ay sonu kim ne kadar prim alacak, hesap tutmuyor.”</p>
+          <p class="pain-a">Her adisyon personele işlenir; prim, ciro ve gider kendiliğinden hesaplanır.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ÖZELLİKLER -->
+    <section class="sec" id="ozellikler">
+      <div class="wrap">
+        <div class="sec-head">
+          <p class="eyebrow">Özellikler</p>
+          <h2>Salonu yönetmek için gereken her şey</h2>
+          <p class="sub">Ayrı ayrı programlara, deftere ve hesap makinesine gerek kalmaz. Hepsi aynı pakette.</p>
+        </div>
+        <div class="grid">
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-cal"/></svg></span><h3>Randevu takvimi</h3><p>Her personel kendi sütununda. Randevu verin, taşıyın, randevusuz gelen müşteriyi tek tıkla ekleyin; molalar ve çalışma saatleri hazır.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-link"/></svg></span><h3>Online randevu sayfası</h3><p>Salonunuza özel kısa link ve QR kod. Müşteri şube, hizmet, personel ve saati seçer; randevu takviminize düşer.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-msg"/></svg></span><h3>SMS &amp; WhatsApp hatırlatma</h3><p>Randevu hatırlatma, doğum günü kutlaması ve “sizi özledik” mesajları. Kampanya mesajı yalnızca izin veren müşteriye gider.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-users"/></svg></span><h3>Müşteri kartı</h3><p>Geçmiş randevular, notlar, boya formülü ve harcamalar tek kartta. Müşteri geldiğinde ne yapıldığını hatırlamak zorunda kalmazsınız.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-wallet"/></svg></span><h3>Kasa &amp; adisyon</h3><p>Nakit, kart, havale ve veresiye. Giderleri girin, gün sonunu alın; kasada ne olması gerektiği hep belli.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-coins"/></svg></span><h3>Personel primleri</h3><p>Hizmet ve ürün satışından prim kendiliğinden hesaplanır. Personel isterse yalnızca kendi primini görür.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-box"/></svg></span><h3>Stok</h3><p>Ürün giriş-çıkışı, sayım ve azalan ürün uyarısı. Ürün listenizi Excel'den tek seferde aktarın.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-gift"/></svg></span><h3>Paket satışı</h3><p>“10 seans lazer” gibi paketler satın; kalan seans her gelişte düşer.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-chart"/></svg></span><h3>Raporlar</h3><p>Ciro, doluluk, yeni ve geri dönen müşteri, gelmeme oranı, en çok kazandıran hizmetler. CSV olarak indirilebilir.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-store"/></svg></span><h3>Birden çok şube</h3><p>Tüm şubeleri tek hesaptan yönetin; raporlara şube şube ya da toplu bakın.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-shield"/></svg></span><h3>Kişiye özel yetki</h3><p>Resepsiyon kasayı görsün mü, personel raporları görsün mü? Kutucukları işaretleyerek siz karar verin.</p></article>
+          <article class="card"><span class="ib"><svg class="ic"><use href="#i-phone"/></svg></span><h3>Telefondan da çalışır</h3><p>Uygulama indirmeden telefonun tarayıcısından açılır. Salonda değilken bile günü takip edin.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ONLINE RANDEVU -->
+    <section class="sec sec-alt" id="online-randevu">
+      <div class="wrap split">
+        <div class="split-copy">
+          <p class="eyebrow">Online randevu</p>
+          <h2>Müşteriniz randevusunu gece 11'de de alabilsin</h2>
+          <p class="sub">Her salonun kendi randevu sayfası var. Müşteri yalnızca boş saatleri görür, aynı saate iki kişi yazılamaz.</p>
+          <ol class="steps">
+            <li><b>Linkinizi paylaşın.</b> <code>{{domain}}/salonunuz</code> gibi kısa bir adres. Instagram profilinize, Google İşletme sayfanıza ya da WhatsApp durumunuza koyun.</li>
+            <li><b>QR kodu asın.</b> Hazır A4 afişi yazdırın; tezgâha, aynaya, vitrine koyun. Müşteri kamerayla okutup randevu alır.</li>
+            <li><b>Randevu takviminize düşer.</b> İsterseniz önce siz onaylarsınız; müşteriye onay ve hatırlatma mesajı gider.</li>
+          </ol>
+        </div>
+        <div class="split-visual phones">
+          <figure class="frame frame-phone"><img src="assets/shots/randevu-mobil-2.webp" width="390" height="844" loading="lazy" alt="Online randevu: hizmet seçimi" /></figure>
+          <figure class="frame frame-phone"><img src="assets/shots/randevu-saat.webp" width="390" height="844" loading="lazy" alt="Online randevu: yalnızca boş saatler gösterilir" /></figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- EKRANLAR -->
+    <section class="sec" id="ekranlar">
+      <div class="wrap">
+        <div class="sec-head">
+          <p class="eyebrow">Ekranlar</p>
+          <h2>Gösterişli değil, işinizi hızlandıran ekranlar</h2>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Ekran görüntüleri">
+          <button role="tab" aria-selected="true" aria-controls="shot" data-src="assets/shots/takvim.webp" data-alt="Günlük randevu takvimi" data-cap="Günün tamamı tek bakışta: kim, ne zaman, hangi hizmet; beklenen ciro ve doluluk üstte.">Takvim</button>
+          <button role="tab" aria-selected="false" aria-controls="shot" data-src="assets/shots/kasa.webp" data-alt="Kasa ve adisyonlar" data-cap="Salonda bekleyen adisyonlar, bugün kapananlar, veresiye ve gün sonu aynı ekranda.">Kasa</button>
+          <button role="tab" aria-selected="false" aria-controls="shot" data-src="assets/shots/raporlar.webp" data-alt="Raporlar" data-cap="Ciro, doluluk, gelmeme oranı ve en çok kazandıran hizmetler; tarih ve şube seçerek.">Raporlar</button>
+          <button role="tab" aria-selected="false" aria-controls="shot" data-src="assets/shots/musteriler.webp" data-alt="Müşteri listesi" data-cap="Tüm müşteriler, son gelişleri ve harcamalarıyla. Uzun süredir gelmeyenleri kolayca bulun.">Müşteriler</button>
+          <button role="tab" aria-selected="false" aria-controls="shot" data-src="assets/shots/mesajlar.webp" data-alt="Mesajlar" data-cap="Hatırlatma ve kampanya mesajları, gönderim durumlarıyla birlikte.">Mesajlar</button>
+          <button role="tab" aria-selected="false" aria-controls="shot" data-src="assets/shots/yetkiler.webp" data-alt="Kullanıcı yetkileri" data-cap="Her çalışana kutucuklarla ayrı yetki: takvim, kasa, stok, raporlar…">Yetkiler</button>
+        </div>
+        <figure class="frame frame-desk frame-big" id="shot" role="tabpanel">
+          <div class="frame-bar"><i></i><i></i><i></i></div>
+          <img src="assets/shots/takvim.webp" width="1440" height="900" loading="lazy" alt="Günlük randevu takvimi" />
+        </figure>
+        <p class="shot-cap" aria-live="polite">Günün tamamı tek bakışta: kim, ne zaman, hangi hizmet; beklenen ciro ve doluluk üstte.</p>
+      </div>
+    </section>
+
+    <!-- KİMLER İÇİN -->
+    <section class="sec sec-alt">
+      <div class="wrap">
+        <div class="sec-head">
+          <p class="eyebrow">Kimler için</p>
+          <h2>Randevuyla çalışan her işletme için</h2>
+        </div>
+        <ul class="chips">
+          <li>Kadın kuaförü</li><li>Erkek kuaförü &amp; berber</li><li>Güzellik merkezi</li><li>Tırnak stüdyosu</li><li>Cilt bakımı &amp; lazer</li><li>Spa &amp; masaj</li><li>Klinikler</li>
+        </ul>
+        <div class="roles">
+          <div class="role"><h3>Salon sahibi</h3><p>Ciroyu, primleri, stoku ve tüm şubeleri her yerden görür; kimin neye erişeceğine karar verir.</p></div>
+          <div class="role"><h3>Resepsiyon</h3><p>Randevu verir, müşteriyi karşılar, adisyonu kapatır. Telefon trafiği azalır.</p></div>
+          <div class="role"><h3>Personel</h3><p>Kendi günlük programını ve isterseniz kendi primini telefonundan görür.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FİYAT -->
+    <section class="sec" id="fiyat">
+      <div class="wrap">
+        <div class="sec-head">
+          <p class="eyebrow">Fiyat</p>
+          <h2>Tek paket, sürpriz yok</h2>
+          <p class="sub">“Bu özellik üst pakette” derdi yok. Tüm özellikler her salonda açık.</p>
+        </div>
+        <div class="price">
+          <div class="price-top">
+            <h3>Tam Paket</h3>
+            <p class="amount"><span class="cur">₺</span>{{priceMonthly}}<span class="per">/ay</span></p>
+            <p class="muted">{{priceNote}}</p>
+          </div>
+          <ul class="price-list">
+            <li><svg class="ic"><use href="#i-check"/></svg>Randevu takvimi ve online randevu sayfası</li>
+            <li><svg class="ic"><use href="#i-check"/></svg>Kısa link ve yazdırılabilir QR afiş</li>
+            <li><svg class="ic"><use href="#i-check"/></svg>SMS &amp; WhatsApp hatırlatma ve kampanyalar</li>
+            <li><svg class="ic"><use href="#i-check"/></svg>Kasa, adisyon, veresiye, gider, gün sonu</li>
+            <li><svg class="ic"><use href="#i-check"/></svg>Personel primleri</li>
+            <li><svg class="ic"><use href="#i-check"/></svg>Stok ve paket satışı</li>
+            <li><svg class="ic"><use href="#i-check"/></svg>Raporlar ve CSV dışa aktarma</li>
+            <li><svg class="ic"><use href="#i-check"/></svg>Birden çok şube ve kişiye özel yetkiler</li>
+            <li><svg class="ic"><use href="#i-check"/></svg>Kurulumda yardım ve destek</li>
+          </ul>
+          <a class="btn btn-wa btn-lg btn-block" href="{{wa}}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg>WhatsApp'tan bilgi alın</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- NASIL BAŞLARIM -->
+    <section class="sec sec-alt">
+      <div class="wrap">
+        <div class="sec-head">
+          <p class="eyebrow">Başlamak</p>
+          <h2>Üç adımda salonunuz hazır</h2>
+        </div>
+        <ol class="how">
+          <li><span class="n">1</span><h3>WhatsApp'tan yazın</h3><p>Salonunuzu, şube ve personel sayınızı konuşalım.</p></li>
+          <li><span class="n">2</span><h3>Hesabınızı açalım</h3><p>Salonunuzu sisteme tanımlıyoruz; hizmetlerinizi, fiyatlarınızı ve personelinizi birlikte giriyoruz.</p></li>
+          <li><span class="n">3</span><h3>Linkinizi paylaşın</h3><p>Randevu linkinizi ve QR kodunuzu müşterilerinize duyurun, ilk online randevunuz gelsin.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- SSS -->
+    <section class="sec" id="sss">
+      <div class="wrap narrow">
+        <div class="sec-head">
+          <p class="eyebrow">Sorular</p>
+          <h2>Sıkça sorulanlar</h2>
+        </div>
+        <div class="faq">
+          <details><summary>Bilgisayarıma bir şey kurmam gerekiyor mu?</summary><p>Hayır. {{name}} internet tarayıcısında çalışır; bilgisayar, tablet ya da telefondan kullanıcı adınız ve şifrenizle girersiniz.</p></details>
+          <details><summary>Müşterilerimin uygulama indirmesi gerekiyor mu?</summary><p>Hayır. Müşteri, paylaştığınız linke tıklar ya da QR kodu okutur; randevu sayfanız telefonunda açılır.</p></details>
+          <details><summary>Çalışanlarım her şeyi görebilir mi?</summary><p>Hayır, siz ne izin verirseniz onu görürler. Her kullanıcı için takvim, kasa, stok, raporlar gibi yetkileri tek tek açıp kapatabilirsiniz. Kullanıcı ve yetki yönetimi yalnızca salon sahibindedir.</p></details>
+          <details><summary>Birden fazla şubem var, hepsini yönetebilir miyim?</summary><p>Evet. Tüm şubeler tek hesapta durur; her çalışanın hangi şubeye erişeceğini siz seçersiniz, raporlara şube şube ya da toplu bakabilirsiniz.</p></details>
+          <details><summary>Müşterilerime izinsiz mesaj gider mi?</summary><p>Hayır. Randevu hatırlatması hizmetin parçasıdır; doğum günü ve kampanya mesajları ise yalnızca ticari ileti onayı veren müşterilere gönderilir. Online randevu sayfasında aydınlatma metni ve ayrı bir onay kutusu bulunur.</p></details>
+          <details><summary>Fiyata neler dahil?</summary><p>Bu sayfadaki tüm özellikler aylık ₺{{priceMonthly}} Tam Paket'e dahildir; özellik kilidi ya da üst paket yoktur.</p></details>
+          <details><summary>Nasıl başlarım?</summary><p>WhatsApp'tan yazmanız yeterli. Salonunuzu birlikte kuruyor, ilk günden kullanmaya başlamanızı sağlıyoruz.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- SON ÇAĞRI -->
+    <section class="cta">
+      <div class="wrap cta-in">
+        <h2>Telefon trafiğini azaltın, koltuklarınızı doldurun.</h2>
+        <p>Sorularınızı WhatsApp'tan yazın; salonunuza nasıl uyacağını birlikte görelim.</p>
+        <a class="btn btn-light btn-lg" href="{{wa}}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg>WhatsApp'tan yazın</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <div class="brand"><img src="assets/favicon.svg" alt="" width="28" height="28" /><span>{{name}}</span></div>
+      <p class="muted">{{contactLine}}</p>
+      <p class="muted">© {{year}} {{company}}</p>
+    </div>
+  </footer>
+
+  <a class="wa-float" href="{{wa}}" target="_blank" rel="noopener" aria-label="WhatsApp'tan yazın"><svg class="ic"><use href="#i-wa"/></svg></a>
+
+  <script>
+    // Ekran sekmeleri (JS kapalıysa ilk görüntü kalır)
+    (function () {
+      var tabs = document.querySelectorAll('.tabs [role=tab]');
+      var img = document.querySelector('#shot img');
+      var cap = document.querySelector('.shot-cap');
+      tabs.forEach(function (t) {
+        t.addEventListener('click', function () {
+          tabs.forEach(function (o) { o.setAttribute('aria-selected', String(o === t)); });
+          img.src = t.dataset.src; img.alt = t.dataset.alt; cap.textContent = t.dataset.cap;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

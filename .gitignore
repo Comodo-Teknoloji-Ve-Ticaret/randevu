@@ -10,3 +10,4 @@ frontend/promo/out/
 
 # Sunucu ayarları ve şifreler (örnek: .env.example)
 .env
+site/dist/
