@@ -41,8 +41,16 @@ Yerleşim (FTP kökü = sitenin kökü):
 - **Ayarlar:** sunucudaki `api/web.config` içinde `<environmentVariables>` (ConnectionStrings__Db, Jwt__Key,
   Cors__Origins__0, Admin__Email/Password …). Bu dosya **depoya girmez**; şifreler yalnız sunucuda durur.
   `<httpErrors existingResponse="PassThrough" />` kalmalı (yoksa IIS API hatalarını HTML sayfasıyla değiştirir).
-- **Güncelleme:** önce `api/app_offline.htm` yükleyin, değişen dosyaları gönderin, sonra silin.
+- **Güncelleme (tek komut):** Mac'te `./deploy/yayinla.sh`, Windows'ta `.\deploy\yayinla.ps1`
+  (sağ tık → PowerShell ile çalıştır). Gerekenler: Node.js, .NET 10 SDK, curl.
+  İlk çalıştırmada `deploy/yayin.ayarlar.json` oluşur; içine FTP şifresini yazın (depoya girmez).
+  Betik: ön yüz testleri → panel + site + backend derlemesi → yalnız değişen dosyaları yükler
+  (backend değiştiyse bu sırada `api/app_offline.htm` bakım sayfası açılır) → eski dosyaları siler → canlı kontrol.
+  Seçenekler: `--kuru` (yüklemeden listele), `--testsiz`, `--hepsi` (her şeyi yeniden yükle).
+  Sunucudaki `api/web.config` betik tarafından hiç değiştirilmez.
+- **Elle güncelleme:** önce `api/app_offline.htm` yükleyin, değişen dosyaları gönderin, sonra silin.
   Yalnız `web.config` yüklemek de uygulamayı yeniden başlatır.
+- **Giriş adı:** e-posta ya da kullanıcı adı olabilir (3–40 harf/rakam/nokta/tire; büyük-küçük harf fark etmez).
 - **Açılmıyorsa:** `aspNetCore` öğesine geçici olarak
   `<handlerSettings><handlerSetting name="debugFile" value="..\App_Data\ancm-debug.log" /><handlerSetting name="debugLevel" value="FILE,TRACE" /></handlerSettings>`
   ekleyip günlüğü FTP'den okuyun; işiniz bitince kaldırın.
