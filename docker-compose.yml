@@ -1,22 +1,24 @@
 # RandevunHazır — yerel geliştirme ve sunucu kurulumu
-# Kullanım: docker compose up -d        (API: http://localhost:8080, veritabanı: localhost:5432)
+# Kullanım: docker compose up -d        (API: http://localhost:8080, veritabanı: localhost:14333)
 # Ayarlar .env dosyasından okunur (bkz. .env.example); sunucuda şifreleri mutlaka değiştirin.
 services:
   db:
-    image: postgres:18-alpine
+    # SQL Server 2022 (canlı sunucudaki sürüm). Apple Silicon'da Rosetta ile çalışır.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-randevuhazir}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-randevuhazir}
-      POSTGRES_DB: ${DB_NAME:-randevuhazir}
+      ACCEPT_EULA: "Y"
+      # En az 8 karakter; büyük harf, küçük harf, rakam ve simge içermeli
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD:-Yerel_Gelistirme_123}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PORT:-14333}:1433"
     volumes:
-      - dbdata:/var/lib/postgresql
+      - dbdata:/var/opt/mssql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-randevuhazir}"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1"]
       interval: 5s
-      retries: 10
+      retries: 20
 
   api:
     build: ./backend
@@ -25,7 +27,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      ConnectionStrings__Db: Host=db;Database=${DB_NAME:-randevuhazir};Username=${DB_USER:-randevuhazir};Password=${DB_PASSWORD:-randevuhazir}
+      ConnectionStrings__Db: Server=db;Database=${DB_NAME:-randevuhazir};User Id=sa;Password=${DB_PASSWORD:-Yerel_Gelistirme_123};TrustServerCertificate=True
       Jwt__Key: ${JWT_KEY:-yerel-gelistirme-anahtari-en-az-32-karakter-uzunlugunda}
       Cors__Origins__0: ${CORS_ORIGIN:-http://127.0.0.1:5317}
       Cors__Origins__1: ${CORS_ORIGIN_2:-http://127.0.0.1:5318}

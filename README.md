@@ -34,12 +34,12 @@ frontend/   React 19 + TypeScript + Vite
   src/infrastructure/  localStorage deposu ya da sunucu deposu (HttpStore), API istemcisi, demo verisi, React sağlayıcıları
   src/ui/              Ortak bileşenler, kabuk, grafikler, tema değişkenleri
   src/pages/           Ekranlar
-backend/    .NET 10 Clean Architecture + PostgreSQL
+backend/    .NET 10 Clean Architecture + SQL Server (tablolar `randevu_` önekli)
   src/ComodoRandevuHazir.Domain/          Lisans, müsaitlik, para, telefon, rol tablosu (ön yüzle birebir)
   src/ComodoRandevuHazir.Application/     Giriş, senkron, işlemsel kayıt (yetki + kasa/stok/paket/mesaj kuralları), online randevu, davet
   src/ComodoRandevuHazir.Infrastructure/  EF Core + Npgsql, şifre özeti, JWT, e-posta (SMTP)
   src/ComodoRandevuHazir.WebApi/          Minimal API uç noktaları
-  tests/                                   xUnit; gerçek PostgreSQL'e karşı (her test sınıfı kendi geçici veritabanı)
+  tests/                                   xUnit; gerçek SQL Server'a karşı (her test sınıfı kendi geçici veritabanı)
 docs/deploy.md         Sunucuya kurulum, taşıma, yedekleme
 docs/superpowers/      Tasarım dokümanları ve uygulama planları
 ```
@@ -64,7 +64,7 @@ Demo verisi tarayıcıda (`localStorage`) saklanır; kullanıcı menüsündeki *
 ### Sunucu ile (backend)
 
 ```bash
-docker compose up -d                       # PostgreSQL + API (http://localhost:8080); .env'de DEMO_ALLOW_RESET=true
+docker compose up -d                       # SQL Server + API (http://localhost:8080); .env'de DEMO_ALLOW_RESET=true
 cd frontend && npm run seed:api            # demo verisi (hesaplar: …@demo.randevuhazir.com.tr / demo1234)
 VITE_API_URL=http://localhost:8080 VITE_DEMO=true npx vite --port 5318
 cd ../backend && dotnet test               # backend testleri (docker compose'daki veritabanını kullanır)

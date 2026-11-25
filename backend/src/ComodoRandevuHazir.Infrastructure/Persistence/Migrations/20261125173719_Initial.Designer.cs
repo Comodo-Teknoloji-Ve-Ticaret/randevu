@@ -3,17 +3,17 @@ using System;
 using ComodoRandevuHazir.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace ComodoRandevuHazir.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261123214515_PasswordResets")]
-    partial class PasswordResets
+    [Migration("20261125173719_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,100 +21,111 @@ namespace ComodoRandevuHazir.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.14")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.HasSequence("records_seq");
+            modelBuilder.HasSequence("randevu_records_seq");
 
             modelBuilder.Entity("ComodoRandevuHazir.Infrastructure.Persistence.CredentialEntity", b =>
                 {
                     b.Property<string>("UserId")
                         .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("user_id");
+                        .HasColumnType("nvarchar(80)")
+                        .HasColumnName("user_id")
+                        .UseCollation("Latin1_General_100_BIN2");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)
-                        .HasColumnType("character varying(254)")
-                        .HasColumnName("email");
+                        .HasColumnType("nvarchar(254)")
+                        .HasColumnName("email")
+                        .UseCollation("Latin1_General_100_BIN2");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("password_hash");
 
-                    b.HasKey("UserId");
+                    b.HasKey("UserId")
+                        .HasName("pk_randevu_credentials");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_randevu_credentials_email");
 
-                    b.ToTable("credentials", (string)null);
+                    b.ToTable("randevu_credentials", (string)null);
                 });
 
             modelBuilder.Entity("ComodoRandevuHazir.Infrastructure.Persistence.PasswordResetEntity", b =>
                 {
                     b.Property<string>("UserId")
                         .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("user_id");
+                        .HasColumnType("nvarchar(80)")
+                        .HasColumnName("user_id")
+                        .UseCollation("Latin1_General_100_BIN2");
 
                     b.Property<int>("Attempts")
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("attempts");
 
                     b.Property<string>("CodeHash")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("code_hash");
 
                     b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("datetimeoffset")
                         .HasColumnName("expires_at");
 
-                    b.HasKey("UserId");
+                    b.HasKey("UserId")
+                        .HasName("pk_randevu_password_resets");
 
-                    b.ToTable("password_resets", (string)null);
+                    b.ToTable("randevu_password_resets", (string)null);
                 });
 
             modelBuilder.Entity("ComodoRandevuHazir.Infrastructure.Persistence.RecordEntity", b =>
                 {
                     b.Property<string>("Collection")
                         .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("collection");
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("collection")
+                        .UseCollation("Latin1_General_100_BIN2");
 
                     b.Property<string>("Id")
                         .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("id");
+                        .HasColumnType("nvarchar(80)")
+                        .HasColumnName("id")
+                        .UseCollation("Latin1_General_100_BIN2");
 
                     b.Property<string>("Data")
                         .IsRequired()
-                        .HasColumnType("jsonb")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("data");
 
                     b.Property<long>("Seq")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
                         .HasColumnName("seq")
-                        .HasDefaultValueSql("nextval('records_seq')");
+                        .HasDefaultValueSql("NEXT VALUE FOR [randevu_records_seq]");
 
                     b.Property<string>("TenantId")
                         .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("tenant_id");
+                        .HasColumnType("nvarchar(80)")
+                        .HasColumnName("tenant_id")
+                        .UseCollation("Latin1_General_100_BIN2");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("datetimeoffset")
                         .HasColumnName("updated_at");
 
-                    b.HasKey("Collection", "Id");
+                    b.HasKey("Collection", "Id")
+                        .HasName("pk_randevu_records");
 
-                    b.HasIndex("TenantId", "Collection");
+                    b.HasIndex("TenantId", "Collection", "Seq")
+                        .HasDatabaseName("ix_randevu_records_tenant_collection");
 
-                    b.ToTable("records", (string)null);
+                    b.ToTable("randevu_records", (string)null);
                 });
 #pragma warning restore 612, 618
         }

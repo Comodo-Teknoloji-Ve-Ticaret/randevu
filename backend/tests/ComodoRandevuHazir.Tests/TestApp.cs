@@ -7,23 +7,23 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Npgsql;
+using Microsoft.Data.SqlClient;
 
 namespace ComodoRandevuHazir.Tests;
 
 /// <summary>
-/// Her test sınıfı için gerçek PostgreSQL'de ayrı, geçici bir veritabanı açan uygulama.
-/// Sunucu: TEST_DB ortam değişkeni ya da docker compose'daki yerel veritabanı.
+/// Her test sınıfı için gerçek SQL Server'da ayrı, geçici bir veritabanı açan uygulama.
+/// Sunucu: TEST_DB ortam değişkeni ya da yerel docker'daki SQL Server (bkz. README).
 /// </summary>
 public class TestApp : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public static readonly string ServerConn = Environment.GetEnvironmentVariable("TEST_DB")
-        ?? "Host=localhost;Port=5432;Username=randevuhazir;Password=randevuhazir;Database=postgres";
+        ?? "Server=localhost,14333;User Id=sa;Password=Yerel_Gelistirme_123;TrustServerCertificate=True;Database=master";
 
     public const string Password = "demo1234";
     private readonly string _dbName = "rh_test_" + Guid.NewGuid().ToString("N")[..12];
 
-    public string ConnectionString => new NpgsqlConnectionStringBuilder(ServerConn) { Database = _dbName }.ConnectionString;
+    public string ConnectionString => new SqlConnectionStringBuilder(ServerConn) { InitialCatalog = _dbName }.ConnectionString;
 
     /// <summary>Alt sınıflar ek ayar verebilir (ör. düşük istek sınırı).</summary>
     protected virtual IDictionary<string, string?> ExtraSettings => new Dictionary<string, string?>();
@@ -50,10 +50,10 @@ public class TestApp : WebApplicationFactory<Program>, IAsyncLifetime
     async Task IAsyncLifetime.DisposeAsync()
     {
         await base.DisposeAsync();
-        NpgsqlConnection.ClearAllPools();
-        await using var conn = new NpgsqlConnection(ServerConn);
+        SqlConnection.ClearAllPools();
+        await using var conn = new SqlConnection(ServerConn);
         await conn.OpenAsync();
-        await using var cmd = new NpgsqlCommand($"DROP DATABASE IF EXISTS \"{_dbName}\" WITH (FORCE)", conn);
+        await using var cmd = new SqlCommand($"IF DB_ID('{_dbName}') IS NOT NULL BEGIN ALTER DATABASE [{_dbName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [{_dbName}]; END", conn);
         await cmd.ExecuteNonQueryAsync();
     }
 

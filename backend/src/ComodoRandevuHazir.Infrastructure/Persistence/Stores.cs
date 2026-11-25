@@ -1,4 +1,6 @@
 using ComodoRandevuHazir.Application;
+using System.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace ComodoRandevuHazir.Infrastructure.Persistence;
@@ -36,9 +38,12 @@ public partial class RecordStore(AppDbContext db, TimeProvider time) : IRecordSt
         // EF eklemeleri anahtar sırasına göre yazabilir; sıra numaraları gönderim sırasıyla burada atanır.
         if (added.Count > 0)
         {
-            var seqs = await db.Database.SqlQuery<long>($"SELECT nextval('records_seq') AS \"Value\" FROM generate_series(1, {added.Count})").ToListAsync(ct);
-            seqs.Sort();
-            for (var i = 0; i < added.Count; i++) added[i].Seq = seqs[i];
+            var first = new SqlParameter("@first", SqlDbType.Variant) { Direction = ParameterDirection.Output };
+            await db.Database.ExecuteSqlRawAsync(
+                $"EXEC sp_sequence_get_range @sequence_name = N'{AppDbContext.RecordSequence}', @range_size = @n, @range_first_value = @first OUTPUT",
+                [new SqlParameter("@n", (long)added.Count), first], ct);
+            var start = Convert.ToInt64(first.Value);
+            for (var i = 0; i < added.Count; i++) added[i].Seq = start + i;
             db.Records.AddRange(added);
         }
         await db.SaveChangesAsync(ct);
@@ -82,23 +87,26 @@ public partial class RecordStore
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<RecordRow>> ListByFieldAsync(string tenantId, string collection, string field, string value, CancellationToken ct) =>
-        await db.Records.FromSqlInterpolated($"SELECT * FROM records WHERE tenant_id = {tenantId} AND collection = {collection} AND data ->> {field} = {value}")
+        await db.Records.FromSqlInterpolated($"SELECT * FROM randevu_records WHERE tenant_id = {tenantId} AND collection = {collection} AND JSON_VALUE(data, {JsonPath(field)}) COLLATE Latin1_General_100_BIN2 = {value}")
             .AsNoTracking()
             .OrderBy(r => r.Seq)
             .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
             .ToListAsync(ct);
 
     public async Task<RecordRow?> FindTenantBySlugAsync(string slug, CancellationToken ct) =>
-        await db.Records.FromSqlInterpolated($"SELECT * FROM records WHERE collection = 'tenants' AND data ->> 'slug' = {slug}")
+        await db.Records.FromSqlInterpolated($"SELECT * FROM randevu_records WHERE collection = 'tenants' AND JSON_VALUE(data, '$.slug') COLLATE Latin1_General_100_BIN2 = {slug}")
             .AsNoTracking()
             .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
             .FirstOrDefaultAsync(ct);
 
     public async Task<RecordRow?> FindTenantByInviteAsync(string token, CancellationToken ct) =>
-        await db.Records.FromSqlInterpolated($"SELECT * FROM records WHERE collection = 'tenants' AND data -> 'invite' ->> 'token' = {token}")
+        await db.Records.FromSqlInterpolated($"SELECT * FROM randevu_records WHERE collection = 'tenants' AND JSON_VALUE(data, '$.invite.token') COLLATE Latin1_General_100_BIN2 = {token}")
             .AsNoTracking()
             .Select(r => new RecordRow(r.Collection, r.Id, r.TenantId, r.Data))
             .FirstOrDefaultAsync(ct);
+
+    /// <summary>Alan adı tırnak içinde verilir; adda nokta ya da boşluk olsa bile tek alan olarak okunur.</summary>
+    private static string JsonPath(string field) => "$.\"" + field.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
 
     public async Task ClearAllAsync(CancellationToken ct)
     {
@@ -110,7 +118,12 @@ public partial class RecordStore
     public async Task<T> InLockAsync<T>(string key, Func<Task<T>> body, CancellationToken ct)
     {
         await using var tx = await db.Database.BeginTransactionAsync(ct);
-        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtext({key}))", ct);
+        // İşlem bitince kendiliğinden bırakılan uygulama kilidi (PostgreSQL'deki pg_advisory_xact_lock karşılığı).
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            DECLARE @r int;
+            EXEC @r = sp_getapplock @Resource = {"randevu:" + key}, @LockMode = 'Exclusive', @LockOwner = 'Transaction', @LockTimeout = 15000;
+            IF @r < 0 THROW 51000, 'Kayıt kilidi alınamadı, lütfen tekrar deneyin.', 1;
+            """, ct);
         var result = await body();
         await tx.CommitAsync(ct);
         return result;

@@ -12,8 +12,9 @@ public static class DependencyInjection
 {
     /// <summary>Ayarlar ilk kullanımda okunur (test ve ortam değişkenleri derlemeden sonra da eklenebilir).</summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services) => services
-        .AddDbContext<AppDbContext>((sp, o) => o.UseNpgsql(sp.GetRequiredService<IConfiguration>().GetConnectionString("Db")
-            ?? throw new InvalidOperationException("ConnectionStrings:Db tanımlı değil (ortam değişkeni ConnectionStrings__Db).")))
+        .AddDbContext<AppDbContext>((sp, o) => o.UseSqlServer(sp.GetRequiredService<IConfiguration>().GetConnectionString("Db")
+            ?? throw new InvalidOperationException("ConnectionStrings:Db tanımlı değil (ortam değişkeni ConnectionStrings__Db)."),
+            sql => sql.MigrationsHistoryTable(AppDbContext.MigrationsTable)))
         .AddSingleton(TimeProvider.System)
         .AddSingleton(sp => sp.GetRequiredService<IConfiguration>().GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions())
         .AddSingleton<IClock, IstanbulClock>()

@@ -59,6 +59,19 @@ if (app.Configuration.GetValue("Database:Migrate", true))
             .EnsurePlatformAdminAsync(adminEmail, app.Configuration["Admin:Password"] ?? "", CancellationToken.None);
 }
 
+// IIS/Plesk'te API sitenin "/api" alt uygulaması olarak çalışır; IIS "/api"yi PathBase'e ayırır.
+// Uç noktalar "/api/..." altında tanımlı olduğundan yol yeniden birleştirilir (kök kurulumda etkisizdir).
+app.Use((ctx, next) =>
+{
+    if (ctx.Request.PathBase.Equals("/api", StringComparison.OrdinalIgnoreCase))
+    {
+        ctx.Request.Path = "/api" + ctx.Request.Path;
+        ctx.Request.PathBase = PathString.Empty;
+    }
+    return next(ctx);
+});
+app.UseRouting(); // yönlendirme yukarıdaki yol düzeltmesinden sonra çalışmalı
+
 // HTTPS için önde ters vekil (Caddy/Nginx) varsa gerçek istemci adresi X-Forwarded-For'dan alınır.
 // Yalnız API doğrudan internete açık DEĞİLKEN açın (aksi hâlde başlık taklit edilebilir).
 if (app.Configuration.GetValue("Proxy:Trusted", false))
