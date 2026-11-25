@@ -93,7 +93,10 @@ if (!changed.length && !stale.length) { console.log(c.g('  Her şey güncel, yü
 const ftpBase = `ftp://${cfg.ftpHost}/`
 const auth = ['--user', `${cfg.ftpUser}:${cfg.ftpPassword}`]
 const enc = (p) => p.split('/').map(encodeURIComponent).join('/')
-const ftp = (extra) => spawnSync('curl', ['-s', '-S', '--retry', '3', '--retry-delay', '2', '-m', '600', ...auth, ...extra], { encoding: 'utf8' })
+const ftp = (extra) => spawnSync('curl', ['-s', '-S', '--retry', '4', '--retry-delay', '3', '--retry-all-errors', '--connect-timeout', '20', '-m', '600', ...auth, ...extra], { encoding: 'utf8' })
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+const NULL = isWin ? 'NUL' : '/dev/null'
+const remoteHas = (dir, name) => (ftp(['--list-only', ftpBase + dir + '/']).stdout ?? '').split(/\r?\n/).includes(name)
 const save = () => writeFileSync(CACHE, JSON.stringify(cache, null, 0))
 
 const offline = join(OUT, 'app_offline.htm')
@@ -102,22 +105,33 @@ if (apiChanged) {
   console.log(c.y('  backend bakım moduna alındı (app_offline.htm)'))
   if (ftp(['-T', offline, ftpBase + 'api/app_offline.htm']).status !== 0) die('Bakım sayfası yüklenemedi — FTP bilgilerini kontrol edin.')
 }
-let done = 0, failed = []
-for (const p of changed) {
-  const r = ftp(['--ftp-create-dirs', '-T', files.get(p).local, ftpBase + enc(p)])
-  done++
-  if (r.status === 0) { cache[p] = files.get(p).hash; if (done % 5 === 0) save() } else failed.push(p)
-  process.stdout.write(`\r  ${done}/${changed.length} ${p.slice(0, 60).padEnd(60)}`)
+let failed = changed
+// Bağlantı anlık koparsa başarısız dosyalar birkaç tur daha denenir
+for (let round = 1; round <= 4 && failed.length; round++) {
+  if (round > 1) { console.log(c.y(`  ${failed.length} dosya yüklenemedi, ${round}. deneme (10 sn sonra)…`)); await sleep(10000) }
+  const todo = failed; failed = []; let done = 0
+  for (const p of todo) {
+    const r = ftp(['--ftp-create-dirs', '-T', files.get(p).local, ftpBase + enc(p)])
+    done++
+    if (r.status === 0) { cache[p] = files.get(p).hash; if (done % 5 === 0) save() } else failed.push(p)
+    process.stdout.write(`\r  ${done}/${todo.length} ${p.slice(0, 60).padEnd(60)}`)
+  }
+  process.stdout.write('\n')
 }
-process.stdout.write('\n')
 for (const p of stale) {
-  const r = ftp(['-o', isWin ? 'NUL' : '/dev/null', '-Q', `DELE /${p}`, ftpBase])
+  const r = ftp(['-o', NULL, '-Q', `DELE /${p}`, ftpBase])
   if (r.status === 0 || /550/.test(r.stderr)) delete cache[p]
 }
 save()
-if (apiChanged) {
-  ftp(['-o', isWin ? 'NUL' : '/dev/null', '-Q', 'DELE /api/app_offline.htm', ftpBase])
-  console.log(c.y('  bakım modu kapatıldı'))
+// Bakım sayfası her durumda kaldırılır (yükleme yarım kalsa bile API eski/yeni sürümle açılır) ve kaldırıldığı doğrulanır
+if (apiChanged || remoteHas('api', 'app_offline.htm')) {
+  let off = false
+  for (let i = 0; i < 6 && !off; i++) {
+    if (i) await sleep(5000)
+    ftp(['-o', NULL, '-Q', 'DELE /api/app_offline.htm', ftpBase])
+    off = !remoteHas('api', 'app_offline.htm')
+  }
+  console.log(off ? c.y('  bakım modu kapatıldı') : c.r('  UYARI: api/app_offline.htm silinemedi — FTP ile elle silin, yoksa API kapalı kalır.'))
 }
 if (failed.length) die(`${failed.length} dosya yüklenemedi:\n  ${failed.join('\n  ')}\nBetiği tekrar çalıştırın; yalnız eksikler yüklenir.`)
 console.log(c.g(`  ${changed.length} dosya yüklendi`))
