@@ -65,8 +65,9 @@ copyDir(join(ROOT, 'site', 'dist'), siteOut)
 mkdirSync(join(siteOut, 'tanitim'), { recursive: true })
 writeFileSync(join(siteOut, 'tanitim', 'index.html'), '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=../"><a href="../">Ana sayfa</a>\n')
 copyFileSync(join(DEPLOY, 'site.web.config'), join(siteOut, 'web.config'))
-// Sunucunun uygulama havuzu 32-bit: win-x86
-run('dotnet', ['publish', join(ROOT, 'backend', 'src', 'ComodoRandevuHazir.WebApi'), '-c', 'Release', '-r', 'win-x86', '--self-contained', 'false', '-o', apiOut, '-v', 'q', '-nologo'], { quiet: true })
+// Sunucunun uygulama havuzu 32-bit: win-x86. Git sürüm numarası gömülmez: backend kodu değişmediyse dosyalar aynı kalır,
+// yayında API bakım moduna girmez.
+run('dotnet', ['publish', join(ROOT, 'backend', 'src', 'ComodoRandevuHazir.WebApi'), '-c', 'Release', '-r', 'win-x86', '--self-contained', 'false', '-p:IncludeSourceRevisionInInformationalVersion=false', '-p:Deterministic=true', '-o', apiOut, '-v', 'q', '-nologo'], { quiet: true })
 for (const f of ['web.config', 'appsettings.Development.json']) rmSync(join(apiOut, f), { force: true })
 console.log(c.g('  derleme tamam'))
 
