@@ -22,8 +22,20 @@ public class AdminUserTests(TestApp app) : IClassFixture<TestApp>
 
         var taken = await p.PostAsJsonAsync("/api/users/u_b_owner/email", new { email = "ayse@test.local" });
         Assert.Equal((HttpStatusCode.Conflict, "Bu e-posta zaten kullanılıyor."), (taken.StatusCode, await Title(taken)));
-        var bad = await p.PostAsJsonAsync("/api/users/u_b_owner/email", new { email = "gecersiz" });
-        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+        foreach (var invalid in new[] { "ab", "boşluklu ad", "eksik@alan", "x/y" })
+            Assert.Equal(HttpStatusCode.BadRequest, (await p.PostAsJsonAsync("/api/users/u_b_owner/email", new { email = invalid })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_name_can_be_a_username_instead_of_an_email()
+    {
+        var p = await app.LoginAsync("platform@test.local");
+        var user = await p.PostAsJsonAsync("/api/batch", new { upserts = new[] { new { collection = "users", data = new { id = "u_kadi", tenantId = (string?)null, name = "Kullanıcı Adlı", role = "platform", branchIds = Array.Empty<string>() } } } });
+        Assert.Equal(HttpStatusCode.OK, user.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await p.PostAsJsonAsync("/api/users/u_kadi/credentials", new { email = "RandevuHazır", password = "kadi-sifre-9" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, await Login("randevuhazır", "kadi-sifre-9"));
+        Assert.Equal(HttpStatusCode.OK, await Login(" RandevuHazır ", "kadi-sifre-9")); // büyük harf ve boşluk fark etmez
+        Assert.Equal(HttpStatusCode.Unauthorized, await Login("randevuhazir", "kadi-sifre-9")); // ı ≠ i: ayrı ad
     }
 
     [Fact]

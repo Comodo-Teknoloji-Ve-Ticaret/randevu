@@ -24,7 +24,7 @@ public static class DemoAccounts
 }
 
 /// <summary>Davetle sahip hesabı, sahibin personeline giriş bilgisi tanımlaması ve demo sıfırlama.</summary>
-public class AccountService(IRecordStore records, ICredentialStore credentials, IPasswordHasher hasher, ITokenIssuer tokens, IClock clock, ImportService import)
+public partial class AccountService(IRecordStore records, ICredentialStore credentials, IPasswordHasher hasher, ITokenIssuer tokens, IClock clock, ImportService import)
 {
     public async Task<JsonObject> InviteInfoAsync(string token, CancellationToken ct)
     {
@@ -149,13 +149,22 @@ public class AccountService(IRecordStore records, ICredentialStore credentials, 
         if (await credentials.FindByEmailAsync(email, ct) is { } c && c.UserId != userId) throw new ConflictException("Bu e-posta zaten kullanılıyor.");
     }
 
+    /// <summary>Giriş adı: e-posta ya da kullanıcı adı (harf, rakam, nokta, tire, alt çizgi; 3–40 karakter).</summary>
     private static string ValidEmail(string? raw)
     {
         var e = AuthService.NormalizeEmail(raw ?? "");
         var at = e.IndexOf('@');
+        if (at < 0)
+        {
+            if (!UsernamePattern().IsMatch(e)) throw new ValidationException("Geçerli bir e-posta ya da kullanıcı adı girin (kullanıcı adı: 3–40 harf, rakam, nokta, tire).");
+            return e;
+        }
         if (e.Length > 254 || at < 1 || e.LastIndexOf('.') < at + 2 || e.EndsWith('.') || e.Contains(' ')) throw new ValidationException("Geçerli bir e-posta girin.");
         return e;
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^[\p{L}\p{N}._-]{3,40}$")]
+    private static partial System.Text.RegularExpressions.Regex UsernamePattern();
 
     private static void ValidPassword(string? p)
     {

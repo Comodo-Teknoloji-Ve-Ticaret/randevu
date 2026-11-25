@@ -282,7 +282,7 @@ function UserEditor({ user, email, onClose, onSaved }: { user?: User; email: str
     </>}>
       <Field label="Ad Soyad"><Input autoFocus value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
       <>
-        <Field label="Giriş e-postası"><Input type="email" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
+        <Field label="Giriş e-postası veya kullanıcı adı"><Input type="text" autoCapitalize="none" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
         <Field label={email ? 'Yeni şifre' : 'Şifre'} hint={email ? 'Değiştirmek istemiyorsanız boş bırakın.' : 'En az 8 karakter. Kullanıcıya siz iletin.'}>
           <Input type="password" autoComplete="new-password" value={f.password} invalid={loginInvalid} onChange={(e) => setF({ ...f, password: e.target.value })} />
         </Field>

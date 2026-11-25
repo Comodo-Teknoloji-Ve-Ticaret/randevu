@@ -126,7 +126,7 @@ function NewUser({ tenantId, onClose, onSaved }: { tenantId: string | null; onCl
           </Field>
         )}
         {needsLogin && <>
-          <Field label="Giriş e-postası"><Input type="email" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
+          <Field label="Giriş e-postası veya kullanıcı adı"><Input type="text" autoCapitalize="none" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
           <Field label="Şifre" hint="En az 8 karakter. Kullanıcıya siz iletin; ilk girişten sonra kendisi değiştirebilir."><Input type="password" autoComplete="new-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></Field>
         </>}
       </div>
@@ -167,7 +167,7 @@ function LoginAction({ action, currentEmail, onClose, onSaved }: { action: Actio
       <Button variant="primary" disabled={busy || invalid} onClick={save}>Kaydet</Button>
     </>}>
       <div className="stack" style={{ gap: 12 }}>
-        {showEmail && <Field label={kind === 'email' ? 'Yeni e-posta' : 'Giriş e-postası'} error={kind === 'email' ? err : null}><Input type="email" autoFocus autoComplete="off" value={email} onChange={(e) => { setEmail(e.target.value); setErr(null) }} /></Field>}
+        {showEmail && <Field label={kind === 'email' ? 'Yeni e-posta veya kullanıcı adı' : 'Giriş e-postası veya kullanıcı adı'} error={kind === 'email' ? err : null}><Input type="text" autoCapitalize="none" autoFocus autoComplete="off" value={email} onChange={(e) => { setEmail(e.target.value); setErr(null) }} /></Field>}
         {showPassword && <>
           <Field label="Yeni şifre" hint="En az 8 karakter."><Input type="password" autoFocus={!showEmail} autoComplete="new-password" value={pw} onChange={(e) => { setPw(e.target.value); setErr(null) }} /></Field>
           <Field label="Yeni şifre (tekrar)" error={err ?? (pw2 && pw !== pw2 ? 'Şifreler aynı değil' : null)}><Input type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} /></Field>

@@ -874,6 +874,37 @@ const suites = {
     await step('Personel rolü: primlerim', async () => { await go('/primlerim'); await expectText('Primlerim') })
     await step('Personel rolü: kasaya giremez', async () => { await go('/kasa'); if (page.url().includes('kasa')) throw new Error('kasaya girebildi') })
   },
+  async sidebar() {
+    await fresh('u_t_lara_owner', 1366, 768)
+    const sideTop = () => page.evaluate(() => Math.round(document.querySelector('.sidebar').getBoundingClientRect().top))
+    for (const p of ['/musteriler', '/raporlar', '/mesajlar']) {
+      await step(`Kenar çubuğu: ${p} aşağı kaydırınca yerinde kalır`, async () => {
+        await go(p)
+        await page.evaluate(() => window.scrollTo(0, 99999)); await sleep(200)
+        const y = await page.evaluate(() => window.scrollY)
+        if (y < 100) throw new Error(`sayfa kaymadı (${y}px), test geçersiz`)
+        const top = await sideTop()
+        if (top !== 0) throw new Error(`kenar çubuğu ${top}px kaydı`)
+      })
+    }
+    const width = () => page.evaluate(() => Math.round(document.querySelector('.sidebar').getBoundingClientRect().width))
+    await step('Kenar çubuğu: daraltılır, simgeler kalır, yazılar gizlenir', async () => {
+      await go('/takvim')
+      const wide = await width()
+      await page.click('.sidebar-toggle'); await sleep(250)
+      const narrow = await width()
+      if (!(narrow < 100 && wide > 200)) throw new Error(`genişlik ${wide} → ${narrow}`)
+      const labelShown = await page.evaluate(() => [...document.querySelectorAll('.sidebar .nav-item span')].some((s) => s.offsetWidth > 0 && !s.classList.contains('count-pill')))
+      if (labelShown) throw new Error('daraltılmışken menü yazıları görünüyor')
+      if ((await count('.sidebar .nav-item svg')) < 5) throw new Error('simgeler yok')
+    })
+    await step('Kenar çubuğu: daraltma yenilemeden sonra da korunur, tekrar açılır', async () => {
+      await page.reload({ waitUntil: 'networkidle0' }); await sleep(300)
+      if ((await width()) > 100) throw new Error('tercih korunmadı')
+      await page.click('.sidebar-toggle'); await sleep(250)
+      if ((await width()) < 200) throw new Error('tekrar açılmadı')
+    })
+  },
   async mobile() {
     await fresh('u_t_lara_rec', 390, 844)
     for (const p of ['/takvim', '/musteriler', '/kasa', '/daha', '/stok', '/mesajlar']) {

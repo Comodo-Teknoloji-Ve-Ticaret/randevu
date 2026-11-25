@@ -102,7 +102,7 @@ export default function Login() {
           {!forgot && (
             <form className="login-form" onSubmit={submit}>
               <h2>Giriş yap</h2>
-              <Field label="E-posta"><Input icon={Mail} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+              <Field label="E-posta veya kullanıcı adı"><Input icon={Mail} type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
               <Field label="Şifre" error={error}><Input icon={KeyRound} type="password" autoComplete="current-password" value={password} invalid={!!error} onChange={(e) => { setPassword(e.target.value); setError(null) }} /></Field>
               <Button variant="primary" size="lg" icon={LogIn} type="submit" disabled={busy || !email.trim() || !password}>{busy ? 'Giriş yapılıyor…' : 'Giriş yap'}</Button>
               <button type="button" className="login-link" onClick={() => setForgot(true)}>Şifremi unuttum</button>

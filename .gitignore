@@ -14,3 +14,8 @@ site/dist/
 site/video/stills/
 site/video/.build/
 _site/
+
+# Yayın betiği: FTP şifresi ve yükleme önbelleği (yalnız bu bilgisayarda)
+deploy/yayin.ayarlar.json
+deploy/.yayin-onbellek.json
+.yayin/

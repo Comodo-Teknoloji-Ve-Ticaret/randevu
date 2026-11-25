@@ -65,6 +65,15 @@ describe('tarayıcı demosu: kullanıcıya giriş bilgisi', () => {
     expect((await call('/api/users/emails') as Record<string, string>).u_t_lara_rec).toBe('gamze@salon.com')
   })
 
+  it('giriş adı e-posta yerine kullanıcı adı da olabilir; geçersiz adlar reddedilir', async () => {
+    const { call, as } = setup()
+    as('u_t_lara_owner')
+    await call('/api/users/u_t_lara_rec/credentials', { email: 'RandevuHazır', password: 'kadi-sifre-9' })
+    const r = await call('/api/auth/login', { email: ' randevuhazır ', password: 'kadi-sifre-9' }) as { user: { id: string } }
+    expect(r.user.id).toBe('u_t_lara_rec')
+    for (const bad of ['ab', 'boşluklu ad', 'eksik@alan', 'x/y'])
+      expect((await err(call('/api/users/u_t_lara_rec/email', { email: bad }))).status).toBe(400)
+  })
   it('başka salonun kullanıcısına dokunamaz; resepsiyon hiç dokunamaz', async () => {
     const { call, as, store } = setup()
     const other = store.read().users.find((u) => u.tenantId && u.tenantId !== 't_lara')!

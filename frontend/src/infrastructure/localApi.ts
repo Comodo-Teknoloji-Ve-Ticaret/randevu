@@ -40,9 +40,14 @@ async function makeCred(email: string, password: string): Promise<Cred> {
 }
 
 export const normalizeEmail = (e: string) => e.trim().toLocaleLowerCase('en-US')
+/** Giriş adı: e-posta ya da kullanıcı adı (sunucudaki kuralın aynısı). */
 function validEmail(raw: unknown): string {
   const e = normalizeEmail(String(raw ?? ''))
   const at = e.indexOf('@')
+  if (at < 0) {
+    if (!/^[\p{L}\p{N}._-]{3,40}$/u.test(e)) fail(400, 'Geçerli bir e-posta ya da kullanıcı adı girin (kullanıcı adı: 3–40 harf, rakam, nokta, tire).')
+    return e
+  }
   if (e.length > 254 || at < 1 || e.lastIndexOf('.') < at + 2 || e.endsWith('.') || e.includes(' ')) fail(400, 'Geçerli bir e-posta girin.')
   return e
 }

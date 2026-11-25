@@ -1,6 +1,6 @@
 import {
   BarChart3, Building2, CalendarDays, ChevronDown, Gift, LogOut, MessageSquare, Monitor, Moon, MoreHorizontal,
-  KeyRound, Package, RotateCcw, Scissors, Settings, Sun, TriangleAlert, UserRound, Users, Wallet, type LucideIcon,
+  KeyRound, Package, PanelLeftClose, PanelLeftOpen, RotateCcw, Scissors, Settings, Sun, TriangleAlert, UserRound, Users, Wallet, type LucideIcon,
 } from 'lucide-react'
 import markUrl from '../assets/brand/mark.png'
 import { useMemo, useState, type ReactNode } from 'react'
@@ -172,17 +172,27 @@ function LicenseBanner() {
   return <div className={cx('lic-banner', ls.state)} role="status"><TriangleAlert />{text}</div>
 }
 
+const MINI_KEY = 'rh:sidebar-mini'
+function readMini(): boolean {
+  try { return localStorage.getItem(MINI_KEY) === '1' } catch { return false }
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const nav = useNav()
+  const [mini, setMini] = useState(readMini)
+  const toggleMini = () => setMini((m) => {
+    try { localStorage.setItem(MINI_KEY, m ? '0' : '1') } catch { /* tercih kaydedilemezse yalnız bu oturumda geçerli */ }
+    return !m
+  })
   const mobileItems = nav.filter((n) => n.mobile).slice(0, 4)
   const hasMore = nav.length > mobileItems.length
   return (
-    <div className="shell">
+    <div className={cx('shell', mini && 'mini')}>
       <aside className="sidebar">
         <Brand />
         <nav className="nav">
           {nav.map((n) => (
-            <NavLink key={n.to} to={n.to} className={({ isActive }) => cx('nav-item', isActive && 'on')}>
+            <NavLink key={n.to} to={n.to} title={mini ? n.label : undefined} aria-label={n.label} className={({ isActive }) => cx('nav-item', isActive && 'on')}>
               <n.icon />
               <span>{n.label}</span>
               {n.badge ? <span className="count-pill">{n.badge}</span> : null}
@@ -190,6 +200,10 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="sidebar-foot">
+          <button type="button" className="sidebar-toggle" onClick={toggleMini} title={mini ? 'Menüyü genişlet' : 'Menüyü daralt'} aria-label={mini ? 'Menüyü genişlet' : 'Menüyü daralt'} aria-expanded={!mini}>
+            {mini ? <PanelLeftOpen /> : <PanelLeftClose />}
+            <span>Menüyü daralt</span>
+          </button>
           <UserMenu />
         </div>
       </aside>
