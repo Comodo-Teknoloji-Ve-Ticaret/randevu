@@ -50,6 +50,12 @@ Yerleşim (FTP kökü = sitenin kökü):
   Sunucudaki `api/web.config` betik tarafından hiç değiştirilmez.
 - **Elle güncelleme:** önce `api/app_offline.htm` yükleyin, değişen dosyaları gönderin, sonra silin.
   Yalnız `web.config` yüklemek de uygulamayı yeniden başlatır.
+- **Kısa ve ı harfsiz linkler:** `randevunhazır.com/<salon>` ve `randevunhazir.com.tr/<salon>` doğrudan salonun
+  online randevu sayfasını açar; `randevunhazir.com.tr/<yol>` → `randevunhazır.com/<aynı yol>` (301).
+  Kurallar `deploy/site.web.config` içinde (IIS URL Rewrite) ve `/api`'ye miras geçmez. Panelin ürettiği
+  linkler `VITE_PUBLIC_URL` (yayın betiğinde `publicUrl`, varsayılan https://randevunhazir.com.tr) ile yazılır.
+  `.com.tr` DNS'i (Hostinger) sunucuyu gösterir; Plesk'te bu siteye **alan adı takma adı** olarak eklenmeli ve
+  Let's Encrypt sertifikası takma adı da kapsamalı.
 - **Giriş adı:** e-posta ya da kullanıcı adı olabilir (3–40 harf/rakam/nokta/tire; büyük-küçük harf fark etmez).
 - **Açılmıyorsa:** `aspNetCore` öğesine geçici olarak
   `<handlerSettings><handlerSetting name="debugFile" value="..\App_Data\ancm-debug.log" /><handlerSetting name="debugLevel" value="FILE,TRACE" /></handlerSettings>`
