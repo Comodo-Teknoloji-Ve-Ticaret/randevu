@@ -1,7 +1,7 @@
 /** Salon randevu linkleri ve davet mesajı. */
 
 /** Kısa link alanadi/<ad> biçiminde olduğu için sitenin kendi yollarıyla çakışan adlar salona verilmez. */
-const RESERVED = new Set(['api', 'assets', 'r', 'davet', 'giris', 'admin', 'www', 'static', 'index', 'favicon', 'robots', 'sitemap'])
+const RESERVED = new Set(['api', 'panel', 'tanitim', 'assets', 'r', 'davet', 'giris', 'admin', 'www', 'static', 'index', 'favicon', 'robots', 'sitemap'])
 
 export const isReservedSlug = (slug: string) => RESERVED.has(slug)
 
@@ -9,9 +9,20 @@ export const isReservedSlug = (slug: string) => RESERVED.has(slug)
  * Müşterilere verilecek randevu linki. Sunucuda kısa (randevuhazir.com.tr/studio-lara);
  * GitHub Pages demosunda sunucu yönlendirmesi olmadığı için uygulama içi biçim (…/#/r/studio-lara).
  */
-export function bookingLink(slug: string, loc: { origin: string; pathname: string }, short: boolean): string {
-  return short ? `${loc.origin}/${slug}` : `${loc.origin}${loc.pathname}#/r/${slug}`
+export function bookingLink(slug: string, loc: { origin: string; pathname: string }, short: boolean, publicUrl?: string): string {
+  return short ? `${base(loc, publicUrl)}/${slug}` : `${loc.origin}${loc.pathname}#/r/${slug}`
 }
+
+/** Salon sahibine gönderilen kurulum (davet) linki; panelin yolu (/panel/) korunur. */
+export function inviteLink(token: string, loc: { origin: string; pathname: string }, publicUrl?: string): string {
+  return `${base(loc, publicUrl)}${loc.pathname}#/davet/${token}`
+}
+
+/**
+ * Paylaşılan linklerin alan adı. Asıl alan adında "ı" olduğu için WhatsApp/SMS'te xn--… biçiminde görünür;
+ * VITE_PUBLIC_URL (ör. https://randevunhazir.com.tr) verilirse linkler onunla üretilir, o adres siteye yönlendirir.
+ */
+const base = (loc: { origin: string }, publicUrl?: string) => (publicUrl || loc.origin).replace(/\/$/, '')
 
 /** alanadi/<ad> ile açılınca randevu sayfasına yönlendirilecek adres; değilse null. */
 export function shortLinkRedirect(pathname: string, hash: string): string | null {

@@ -11,7 +11,7 @@ import { addDays, formatDate, todayIstanbul } from '../../domain/time'
 import type { BusinessType, Tenant } from '../../domain/types'
 import { useDbSnapshot, useStore } from '../../infrastructure'
 import { Badge, Button, cx, Drawer, Field, Input, Kpi, Modal, PageHeader, Popover, Segmented, Select, useConfirm, useToast } from '../../ui'
-import { inviteMessage } from '../../domain/links'
+import { inviteLink, inviteMessage } from '../../domain/links'
 import { bookingUrl } from '../settings/SettingsPage'
 import '../settings/settings.css'
 import { UsersDrawer } from './UsersDrawer'
@@ -19,7 +19,7 @@ import './platform.css'
 
 type LicFilter = 'all' | 'expiring' | 'expired'
 
-export const inviteUrl = (token: string) => `${location.origin}${location.pathname}#/davet/${token}`
+export const inviteUrl = (token: string) => inviteLink(token, location, import.meta.env.VITE_PUBLIC_URL)
 
 function LicenseCell({ ls, days }: { ls: LicenseStatus; days: number }) {
   const pct = Math.min(100, Math.round((ls.used / Math.max(1, days)) * 100))

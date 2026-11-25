@@ -5,4 +5,6 @@ interface ImportMetaEnv {
   readonly VITE_API_URL?: string
   /** "true" ise giriş ekranında demo hesapları ve "demo verisini sıfırla" gösterilir. */
   readonly VITE_DEMO?: string
+  /** Paylaşılan linklerin (randevu, davet) alan adı, ör. https://randevunhazir.com.tr. Boşsa sitenin kendi adresi. */
+  readonly VITE_PUBLIC_URL?: string
 }

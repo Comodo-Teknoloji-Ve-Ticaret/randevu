@@ -38,12 +38,14 @@ const have = (cmd) => spawnSync(cmd, ['--version'], { stdio: 'ignore', shell: is
 
 // ── Ayarlar ────────────────────────────────────────────────────────────────
 if (!existsSync(SETTINGS)) {
-  writeFileSync(SETTINGS, JSON.stringify({ ftpHost: '77.245.159.112', ftpUser: 'randevu', ftpPassword: 'FTP-SIFRESINI-YAZIN', siteUrl: 'https://xn--randevunhazr-c5b.com' }, null, 2) + '\n')
+  writeFileSync(SETTINGS, JSON.stringify({ ftpHost: '77.245.159.112', ftpUser: 'randevu', ftpPassword: 'FTP-SIFRESINI-YAZIN', siteUrl: 'https://xn--randevunhazr-c5b.com', publicUrl: 'https://randevunhazir.com.tr' }, null, 2) + '\n')
   die(`Ayar dosyası oluşturuldu: ${SETTINGS}\n  İçine FTP şifresini yazıp betiği tekrar çalıştırın. (Bu dosya GitHub'a gönderilmez.)`)
 }
 const cfg = JSON.parse(readFileSync(SETTINGS, 'utf8'))
 if (!cfg.ftpPassword || cfg.ftpPassword.includes('SIFRE')) die(`FTP şifresi ${SETTINGS} dosyasında yazılı değil.`)
 const SITE = cfg.siteUrl.replace(/\/$/, '')
+// Paylaşılan linklerin (randevu, davet) alan adı: "ı" harfsiz, siteye yönlendirir
+const PUBLIC = (cfg.publicUrl ?? 'https://randevunhazir.com.tr').replace(/\/$/, '')
 
 for (const t of ['node', 'npm', 'dotnet', 'curl']) if (!have(t)) die(`"${t}" bulunamadı. Kurulu olmalı (node/npm: nodejs.org, dotnet: .NET 10 SDK).`)
 
@@ -59,7 +61,7 @@ if (!args.has('--testsiz')) {
 step('Derleniyor: panel, tanıtım sitesi, backend')
 rmSync(OUT, { recursive: true, force: true })
 const siteOut = join(OUT, 'site'), apiOut = join(OUT, 'api')
-run('npx', ['vite', 'build', '--outDir', join(siteOut, 'panel'), '--emptyOutDir'], { cwd: FRONT, quiet: true, env: { ...process.env, VITE_API_URL: SITE, VITE_DEMO: '' } })
+run('npx', ['vite', 'build', '--outDir', join(siteOut, 'panel'), '--emptyOutDir'], { cwd: FRONT, quiet: true, env: { ...process.env, VITE_API_URL: SITE, VITE_PUBLIC_URL: PUBLIC, VITE_DEMO: '' } })
 run('node', [join(ROOT, 'site', 'build.mjs')], { cwd: join(ROOT, 'site'), quiet: true })
 copyDir(join(ROOT, 'site', 'dist'), siteOut)
 mkdirSync(join(siteOut, 'tanitim'), { recursive: true })

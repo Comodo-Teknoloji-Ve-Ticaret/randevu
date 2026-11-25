@@ -187,7 +187,7 @@ public partial class BatchService(IRecordStore records, CashRules cash, StockPac
     }
 
     /// <summary>Kısa link alanadi/&lt;ad&gt; biçiminde; ön yüz domain/links.ts ile aynı ayrılmış adlar.</summary>
-    private static readonly HashSet<string> ReservedSlugs = ["api", "assets", "r", "davet", "giris", "admin", "www", "static", "index", "favicon", "robots", "sitemap"];
+    private static readonly HashSet<string> ReservedSlugs = ["api", "panel", "tanitim", "assets", "r", "davet", "giris", "admin", "www", "static", "index", "favicon", "robots", "sitemap"];
 
     [GeneratedRegex("^[a-z0-9-]{1,60}$")]
     private static partial Regex SlugPattern();

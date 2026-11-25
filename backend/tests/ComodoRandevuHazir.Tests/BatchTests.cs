@@ -87,8 +87,11 @@ public class BatchTests(TestApp app) : IClassFixture<TestApp>
         var t = (await Find(c, "tenants", "t_a"))!;
         t["slug"] = "salon-b";
         await AssertStatus(HttpStatusCode.Conflict, Batch(c, [Up("tenants", t)]), "Bu online randevu adresi");
-        t["slug"] = "api"; // kısa link alanadi/<ad> sitenin yollarıyla çakışmamalı
-        await AssertStatus(HttpStatusCode.Conflict, Batch(c, [Up("tenants", t)]), "Bu online randevu adresi");
+        foreach (var reserved in new[] { "api", "panel", "tanitim" }) // kısa link alanadi/<ad> sitenin yollarıyla çakışmamalı
+        {
+            t["slug"] = reserved;
+            await AssertStatus(HttpStatusCode.Conflict, Batch(c, [Up("tenants", t)]), "Bu online randevu adresi");
+        }
         t["slug"] = "Büyük Harf";
         await AssertStatus(HttpStatusCode.BadRequest, Batch(c, [Up("tenants", t)]), "Bağlantı adı");
         t["slug"] = "salon-a-yeni";

@@ -31,7 +31,7 @@ const SECTIONS: { key: Section; label: string; icon: typeof Building2 }[] = [
 const BRAND_COLORS = ['#6c5ce7', '#12a37b', '#0984e3', '#e17055', '#e84393', '#2d3436', '#b8860b', '#00b894']
 
 /** Müşterilere verilecek randevu linki: sunucuda kısa (alanadi/salon), demo sitede uygulama içi biçim. */
-export const bookingUrl = (slug: string) => bookingLink(slug, location, apiMode)
+export const bookingUrl = (slug: string) => bookingLink(slug, location, apiMode, import.meta.env.VITE_PUBLIC_URL)
 
 export default function SettingsPage() {
   const [sec, setSec] = useState<Section>('salon')

@@ -1,9 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { bookingLink, inviteMessage, isReservedSlug, shortLinkRedirect } from './links'
+import { bookingLink, inviteLink, inviteMessage, isReservedSlug, shortLinkRedirect } from './links'
 
 describe('randevu linki', () => {
   it('sunucuda kısa: alanadi/salon', () => {
     expect(bookingLink('studio-lara', { origin: 'https://randevuhazir.com.tr', pathname: '/' }, true)).toBe('https://randevuhazir.com.tr/studio-lara')
+  })
+  it('paylaşım adresi verilmişse link onunla üretilir (ı harfsiz alan adı)', () => {
+    const loc = { origin: 'https://xn--randevunhazr-c5b.com', pathname: '/panel/' }
+    expect(bookingLink('demo', loc, true, 'https://randevunhazir.com.tr')).toBe('https://randevunhazir.com.tr/demo')
+    expect(bookingLink('demo', loc, true, 'https://randevunhazir.com.tr/')).toBe('https://randevunhazir.com.tr/demo')
+    expect(bookingLink('demo', loc, true, '')).toBe('https://xn--randevunhazr-c5b.com/demo')
+  })
+  it('davet linki de paylaşım adresiyle, panel yolu korunur', () => {
+    const loc = { origin: 'https://xn--randevunhazr-c5b.com', pathname: '/panel/' }
+    expect(inviteLink('abc', loc, 'https://randevunhazir.com.tr')).toBe('https://randevunhazir.com.tr/panel/#/davet/abc')
+    expect(inviteLink('abc', loc, undefined)).toBe('https://xn--randevunhazr-c5b.com/panel/#/davet/abc')
   })
   it('demo sitede (GitHub Pages) bugünkü biçim', () => {
     expect(bookingLink('studio-lara', { origin: 'https://comodo.github.io', pathname: '/randevu/' }, false)).toBe('https://comodo.github.io/randevu/#/r/studio-lara')
@@ -24,6 +35,8 @@ describe('kısa linkten yönlendirme', () => {
   })
   it('ayrılmış adlar salona verilemez', () => {
     expect(isReservedSlug('api')).toBe(true)
+    expect(isReservedSlug('panel')).toBe(true)
+    expect(isReservedSlug('tanitim')).toBe(true)
     expect(isReservedSlug('studio-lara')).toBe(false)
   })
 })
