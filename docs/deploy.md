@@ -4,17 +4,48 @@ Bu rehber, RandevunHazır'ı kendi sunucunuzda çalıştırmak için gereken ad�
 
 - `https://alanadiniz` adresinde çalışan bir site
 - Otomatik HTTPS sertifikası
-- Kalıcı bir PostgreSQL veritabanı
+- Kalıcı bir SQL Server veritabanı
 
 Bütün sistem Docker ile çalışır. Bu sayede sunucu firmasından bağımsızdır; sunucu değiştirmek, veriyi yeni sunucuya taşımaktan ibarettir.
 
 ```
-İnternet ──443──▶ web (Caddy: HTTPS + site) ──/api──▶ api (.NET) ──▶ db (PostgreSQL)
+İnternet ──443──▶ web (Caddy: HTTPS + site) ──/api──▶ api (.NET) ──▶ db (SQL Server)
 ```
 
 Dışarıya yalnızca 80 ve 443 numaralı portlar açılır. API ve veritabanına dışarıdan doğrudan erişilemez.
 
 ---
+
+> **Canlı kurulum (Kasım 2026):** randevunhazır.com bir Windows/Plesk (IIS) barındırmasında çalışır,
+> veritabanı oradaki SQL Server'dır. Aşağıdaki "Plesk / IIS" bölümüne bakın. Docker anlatımı kendi sunucunuza
+> kurulum içindir.
+
+## Plesk / IIS (Windows barındırma) — canlı kurulum
+
+Yerleşim (FTP kökü = sitenin kökü):
+
+```
+/            tanıtım sitesi (site/dist) + web.config (Plesk'in hata sayfaları + webp/woff2 MIME)
+/panel/      uygulama; VITE_API_URL=https://xn--randevunhazr-c5b.com ile derlenir (demo kapalı)
+/api/        backend; IIS'te "api" alt uygulaması (uç noktalar yine /api/... adresinde)
+/App_Data/   yazılabilir klasör (gerekirse ANCM günlükleri buraya yönlendirilir)
+```
+
+- **Veritabanı:** paylaşılan SQL Server veritabanı. Tüm nesneler `randevu_` önekli
+  (`randevu_records`, `randevu_credentials`, `randevu_password_resets`, `randevu_records_seq`,
+  geçmiş tablosu `randevu___EFMigrationsHistory`); diğer uygulamaların tablolarına dokunulmaz.
+  Uygulama açılışta bekleyen migration'ları kendisi uygular; elle uygulamak için:
+  `dotnet ef database update -p src/ComodoRandevuHazir.Infrastructure -s src/ComodoRandevuHazir.WebApi --connection "<bağlantı>"`
+- **Derleme:** uygulama havuzu **32-bit** çalışır → `dotnet publish src/ComodoRandevuHazir.WebApi -c Release -r win-x86 --self-contained false`.
+  x64 derleme "500.30 / managed exception" ile açılmaz.
+- **Ayarlar:** sunucudaki `api/web.config` içinde `<environmentVariables>` (ConnectionStrings__Db, Jwt__Key,
+  Cors__Origins__0, Admin__Email/Password …). Bu dosya **depoya girmez**; şifreler yalnız sunucuda durur.
+  `<httpErrors existingResponse="PassThrough" />` kalmalı (yoksa IIS API hatalarını HTML sayfasıyla değiştirir).
+- **Güncelleme:** önce `api/app_offline.htm` yükleyin, değişen dosyaları gönderin, sonra silin.
+  Yalnız `web.config` yüklemek de uygulamayı yeniden başlatır.
+- **Açılmıyorsa:** `aspNetCore` öğesine geçici olarak
+  `<handlerSettings><handlerSetting name="debugFile" value="..\App_Data\ancm-debug.log" /><handlerSetting name="debugLevel" value="FILE,TRACE" /></handlerSettings>`
+  ekleyip günlüğü FTP'den okuyun; işiniz bitince kaldırın.
 
 ## 1. Gerekenler
 
