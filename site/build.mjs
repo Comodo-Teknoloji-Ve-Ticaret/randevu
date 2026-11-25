@@ -21,7 +21,17 @@ const contact = [
   `<a href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`,
 ].filter(Boolean).join(' · ')
 
+// Google Tag Manager (site.config.json → gtmId). Boşsa hiçbir izleme kodu eklenmez.
+const gtm = cfg.gtmId ?? ''
+if (gtm && !/^GTM-[A-Z0-9]+$/.test(gtm)) throw new Error(`gtmId geçersiz: ${gtm}`)
+const gtmHead = gtm ? `<!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtm}');</script>
+  <!-- /Google Tag Manager -->` : ''
+const gtmBody = gtm ? `<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${gtm}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>` : ''
+
 const values = {
+  gtmHead,
+  gtmBody,
   name: esc(cfg.name),
   domain: esc(cfg.domain),
   domainUrl: esc(new URL(`https://${cfg.domain}`).host), // xn-- biçimi (önizleme botları/arama motorları için)

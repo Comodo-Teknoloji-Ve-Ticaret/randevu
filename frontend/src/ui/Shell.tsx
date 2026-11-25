@@ -1,5 +1,5 @@
 import {
-  BarChart3, Building2, CalendarDays, ChevronDown, Gift, LogOut, MessageSquare, Monitor, Moon, MoreHorizontal,
+  BarChart3, Building2, CalendarDays, ChevronDown, Compass, Gift, LogOut, MessageSquare, Monitor, Moon, MoreHorizontal,
   KeyRound, Package, PanelLeftClose, PanelLeftOpen, RotateCcw, Scissors, Settings, Sun, TriangleAlert, UserRound, Users, Wallet, type LucideIcon,
 } from 'lucide-react'
 import markUrl from '../assets/brand/mark.png'
@@ -14,7 +14,9 @@ import { httpStore, useDbSnapshot, useStore } from '../infrastructure'
 import { resetLocalCredentials } from '../infrastructure/storeHelpers'
 import { apiFetch, apiMode, demoMode } from '../infrastructure/api'
 import { buildSeed } from '../infrastructure/seed'
-import { Avatar, cx, Popover, useConfirm, useToast } from './index'
+import { Avatar, cx, Popover, useConfirm, useIsMobile, useToast } from './index'
+import { Tour } from './tour/Tour'
+import { buildTourSteps, tourSeen } from './tour/tourSteps'
 import { ChangePasswordDialog } from './PasswordDialogs'
 import './shell.css'
 import '../pages/platform/platform.css'
@@ -66,7 +68,7 @@ function Brand() {
   )
 }
 
-function UserMenu() {
+function UserMenu({ onTour }: { onTour: () => void }) {
   const { user, logout, theme, setTheme } = useSession()
   const [changingPw, setChangingPw] = useState(false)
   const store = useStore()
@@ -120,6 +122,7 @@ function UserMenu() {
           >
             <RotateCcw /> Demo verisini sıfırla
           </button>}
+          <button onClick={() => { close(); onTour() }}><Compass /> Tanıtım turu</button>
           <button onClick={() => { close(); setChangingPw(true) }}><KeyRound /> Şifremi değiştir</button>
           <button onClick={() => { close(); logout(); nav('/giris') }}>
             <LogOut /> Çıkış yap
@@ -180,6 +183,10 @@ function readMini(): boolean {
 export function Shell({ children }: { children: ReactNode }) {
   const nav = useNav()
   const [mini, setMini] = useState(readMini)
+  const { user, branches } = useSession()
+  const mobile = useIsMobile()
+  // İlk girişte tanıtım turu kendiliğinden açılır; atlanınca ya da bitince bu kullanıcı için bir daha açılmaz.
+  const [touring, setTouring] = useState(() => !!user && !tourSeen(user.id))
   const toggleMini = () => setMini((m) => {
     try { localStorage.setItem(MINI_KEY, m ? '0' : '1') } catch { /* tercih kaydedilemezse yalnız bu oturumda geçerli */ }
     return !m
@@ -192,7 +199,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <Brand />
         <nav className="nav">
           {nav.map((n) => (
-            <NavLink key={n.to} to={n.to} title={mini ? n.label : undefined} aria-label={n.label} className={({ isActive }) => cx('nav-item', isActive && 'on')}>
+            <NavLink key={n.to} to={n.to} data-tour={n.to} title={mini ? n.label : undefined} aria-label={n.label} className={({ isActive }) => cx('nav-item', isActive && 'on')}>
               <n.icon />
               <span>{n.label}</span>
               {n.badge ? <span className="count-pill">{n.badge}</span> : null}
@@ -204,7 +211,7 @@ export function Shell({ children }: { children: ReactNode }) {
             {mini ? <PanelLeftOpen /> : <PanelLeftClose />}
             <span>Menüyü daralt</span>
           </button>
-          <UserMenu />
+          <UserMenu onTour={() => setTouring(true)} />
         </div>
       </aside>
       <div className="main">
@@ -212,25 +219,33 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="topbar-mobile-brand"><Brand /></div>
           <BranchPicker />
           <div className="spacer" />
-          <div className="topbar-user"><UserMenu /></div>
+          <div className="topbar-user"><UserMenu onTour={() => setTouring(true)} /></div>
         </header>
         <LicenseBanner />
         <main className="content">{children}</main>
       </div>
       <nav className="bottom-nav">
         {mobileItems.map((n) => (
-          <NavLink key={n.to} to={n.to} className={({ isActive }) => cx('bn-item', isActive && 'on')}>
+          <NavLink key={n.to} to={n.to} data-tour={n.to} className={({ isActive }) => cx('bn-item', isActive && 'on')}>
             <span className="bn-icon"><n.icon />{n.badge ? <span className="count-pill">{n.badge}</span> : null}</span>
             <span>{n.label}</span>
           </NavLink>
         ))}
         {hasMore && (
-          <NavLink to="/daha" className={({ isActive }) => cx('bn-item', isActive && 'on')}>
+          <NavLink to="/daha" data-tour="/daha" className={({ isActive }) => cx('bn-item', isActive && 'on')}>
             <span className="bn-icon"><MoreHorizontal /></span>
             <span>Daha fazla</span>
           </NavLink>
         )}
       </nav>
+      {touring && user && (
+        <Tour
+          key={mobile ? 'm' : 'd'}
+          userId={user.id}
+          onClose={() => setTouring(false)}
+          steps={buildTourSteps({ role: user.role, name: user.name, nav: nav.map((n) => n.to), mobileNav: mobileItems.map((n) => n.to), hasBranches: branches.length > 1, mobile })}
+        />
+      )}
     </div>
   )
 }

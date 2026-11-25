@@ -60,6 +60,7 @@ async function asUser(user) {
   const token = API && user ? await apiToken(user) : null
   await page.evaluate((u, t, api) => {
     localStorage.setItem('makas:session', JSON.stringify({ userId: u || null, branchId: null, theme: 'light' }))
+    localStorage.setItem('rh:tour-off', '1') // tanıtım turu kendiliğinden açılıp testleri engellemesin (tour paketi hariç)
     if (api) { if (t) localStorage.setItem('rh:token', t); else localStorage.removeItem('rh:token') }
   }, user, token, !!API)
 }
@@ -903,6 +904,51 @@ const suites = {
       if ((await width()) > 100) throw new Error('tercih korunmadı')
       await page.click('.sidebar-toggle'); await sleep(250)
       if ((await width()) < 200) throw new Error('tekrar açılmadı')
+    })
+  },
+  async tour() {
+    await fresh('u_t_lara_owner', 1366, 768)
+    const card = () => page.evaluate(() => { const c = document.querySelector('.tour-card'); return c ? { title: c.querySelector('h2')?.textContent, count: c.querySelector('.tour-count')?.textContent } : null })
+    const btn = async (t) => { const ok = await page.evaluate((t) => { const b = [...document.querySelectorAll('.tour-card button')].find((x) => x.textContent.trim() === t); b?.click(); return !!b }, t); if (!ok) throw new Error('düğme yok: ' + t) }
+    await step('Tanıtım: ilk girişte kendiliğinden açılır', async () => {
+      await page.evaluate(() => { localStorage.removeItem('rh:tour-off'); Object.keys(localStorage).filter((k) => k.startsWith('rh:tour:')).forEach((k) => localStorage.removeItem(k)) })
+      await go('/takvim'); await sleep(400)
+      const c = await card()
+      if (!c?.title?.includes('Hoş geldiniz')) throw new Error('karşılama yok: ' + JSON.stringify(c))
+    })
+    await step('Tanıtım: İleri → menü öğesi vurgulanır, Geri ile döner', async () => {
+      await btn('İleri'); await sleep(300)
+      const c = await card()
+      if (c?.title !== 'Randevu takvimi' || !c.count?.startsWith('2 /')) throw new Error(JSON.stringify(c))
+      const off = await page.evaluate(() => { const a = document.querySelector('.tour-spot').getBoundingClientRect(), b = document.querySelector('.sidebar [data-tour="/takvim"]').getBoundingClientRect(); return Math.abs(a.left + a.width / 2 - (b.left + b.width / 2)) + Math.abs(a.top + a.height / 2 - (b.top + b.height / 2)) })
+      if (off > 4) throw new Error(`vurgu yerinde değil (${off}px)`)
+      const inView = await page.evaluate(() => { const r = document.querySelector('.tour-card').getBoundingClientRect(); return r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight })
+      if (!inView) throw new Error('kart ekran dışına taşıyor')
+      await btn('Geri'); await sleep(200)
+      if (!(await card())?.title?.includes('Hoş geldiniz')) throw new Error('geri dönmedi')
+    })
+    await step('Tanıtım: Atla kapatır, yenileyince tekrar açılmaz', async () => {
+      await btn('Atla'); await sleep(200)
+      if (await card()) throw new Error('kapanmadı')
+      await page.reload({ waitUntil: 'networkidle0' }); await sleep(500)
+      if (await card()) throw new Error('yenileyince yine açıldı')
+    })
+    await step('Tanıtım: kullanıcı menüsünden yeniden açılır, son adımda Bitir ile kapanır', async () => {
+      await page.click('.sidebar .user-btn'); await sleep(200)
+      await clickText('Tanıtım turu', '.menu button'); await sleep(300)
+      if (!(await card())) throw new Error('açılmadı')
+      for (let i = 0; i < 30 && !(await page.evaluate(() => [...document.querySelectorAll('.tour-card button')].some((b) => b.textContent.trim() === 'Bitir'))); i++) { await btn('İleri'); await sleep(120) }
+      if ((await card())?.title !== 'Hazırsınız!') throw new Error('son adım yok')
+      await btn('Bitir'); await sleep(200)
+      if (await card()) throw new Error('kapanmadı')
+    })
+    await step('Tanıtım: telefonda alt menüyü gösterir, ekrana sığar', async () => {
+      await fresh('u_t_lara_owner', 390, 844)
+      await page.evaluate(() => { localStorage.removeItem('rh:tour-off'); Object.keys(localStorage).filter((k) => k.startsWith('rh:tour:')).forEach((k) => localStorage.removeItem(k)) })
+      await go('/takvim'); await sleep(400)
+      await btn('İleri'); await sleep(300)
+      const ok = await page.evaluate(() => { const r = document.querySelector('.tour-card').getBoundingClientRect(), s = document.querySelector('.tour-spot').getBoundingClientRect(), t = document.querySelector('.bottom-nav [data-tour="/takvim"]').getBoundingClientRect(); return { fits: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight, overlap: !(r.bottom <= s.top || r.top >= s.bottom), spotOk: Math.abs(s.top + s.height / 2 - (t.top + t.height / 2)) < 4, over: document.documentElement.scrollWidth - innerWidth } })
+      if (!ok.fits || ok.overlap || !ok.spotOk || ok.over > 2) throw new Error(JSON.stringify(ok))
     })
   },
   async mobile() {
